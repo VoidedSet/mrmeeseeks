@@ -9,8 +9,8 @@ import asyncio
 import subprocess
 import shlex
 import logging
-from ipc_bus import bus
-from schema_registry import READ_ONLY_CMDS, is_destructive
+from core.ipc_bus import bus
+from core.schema_registry import READ_ONLY_CMDS, is_destructive
 
 log = logging.getLogger("sysadmin")
 

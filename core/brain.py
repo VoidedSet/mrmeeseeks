@@ -13,9 +13,9 @@ from typing import Optional
 
 import httpx
 
-from schema_registry import TOOL_SCHEMAS, validate_tool_call
-from ipc_bus import bus
-from state_machine import StateMachine, State
+from core.schema_registry import TOOL_SCHEMAS, validate_tool_call
+from core.ipc_bus import bus
+from core.state_machine import StateMachine, State
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [BRAIN] %(message)s")
