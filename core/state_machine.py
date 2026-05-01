@@ -20,13 +20,12 @@ class State(Enum):
 
 # valid transitions
 TRANSITIONS = {
-    State.IDLE:      [State.LISTENING, State.THINKING],   # thinking for proactive events
+    State.IDLE:      [State.LISTENING, State.THINKING],
     State.LISTENING: [State.THINKING, State.IDLE],
     State.THINKING:  [State.ACTING, State.IDLE],
-    State.ACTING:    [State.IDLE],
+    State.ACTING:    [State.SPEAKING, State.IDLE],
     State.SPEAKING:  [State.IDLE],
 }
-
 
 class StateMachine:
     def __init__(self):
