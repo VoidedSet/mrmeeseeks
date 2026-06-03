@@ -1,0 +1,20 @@
+# Mr Meeseeks — Python Dependencies
+
+# ── Core ──────────────────────────────────────────────────────────────────────
+httpx>=0.28.0          # async HTTP — Groq + Ollama calls
+python-dotenv>=1.0.0   # .env loading
+
+# ── Schema validation ─────────────────────────────────────────────────────────
+pydantic>=2.0.0        # tool schema validation (future — currently pure Python)
+
+# ── Phase 2 — Eyes + Hands (install when building those agents) ───────────────
+# pyautogui             # mouse/keyboard control
+# pyatspi               # AT-SPI2 accessibility DOM (also needs: sudo apt install at-spi2-core python3-atspi)
+
+# ── Phase 3 — Voice (install when building buddy_agent) ──────────────────────
+# faster-whisper        # local STT
+# kokoro-onnx           # local TTS
+# pvporcupine           # wake word detection
+
+# ── Phase 5 — Kernel Listeners ────────────────────────────────────────────────
+# evdev                 # raw input events (/dev/input/event*)

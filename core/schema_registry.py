@@ -125,10 +125,50 @@ REQUIRED_ARGS: dict[str, list[str]] = {
 
 # ── Read-only commands whitelist (for run_bg_cmd safety gate) ─────────────────
 READ_ONLY_CMDS = {
+    # ── Core shell utils ──
     "cat", "ls", "grep", "pwd", "echo", "ps", "df", "free",
     "uname", "which", "find", "head", "tail", "wc", "stat",
-    "env", "printenv", "whoami", "id", "uptime", "top",
-    "lsof", "netstat", "ss", "hostname", "date", "file",
+    "env", "printenv", "whoami", "id", "uptime", "date", "file",
+    "sort", "uniq", "cut", "awk", "sed", "tr", "diff", "less",
+    "realpath", "dirname", "basename",
+
+    # ── Process / system info ──
+    "top", "htop", "lsof", "pgrep", "pstree",
+    "lscpu", "lsmem", "lsblk", "lspci", "lsusb", "lshw",
+    "dmidecode", "sensors",
+
+    # ── Network (read only) ──
+    "netstat", "ss", "hostname", "ip", "ifconfig",
+    "nslookup", "dig", "host", "ping",
+    "traceroute", "route", "arp",
+
+    # ── X11 / window management (read) ──
+    "xdotool",   # xdotool search/getwindowpid/getwindowname etc.
+    "wmctrl",    # wmctrl -l  (list all windows)
+    "xprop",     # xprop -root  (read window properties)
+    "xrandr",    # display config info
+    "xwininfo",  # window geometry info
+    "xlsfonts",
+
+    # ── Audio (read) ──
+    "pactl",     # pactl list sinks / sources
+    "amixer",    # amixer get
+    "aplay",     # aplay -l  (list devices)
+
+    # ── Disk / filesystem (read) ──
+    "du", "mount", "findmnt", "blkid",
+    "smartctl",  # disk health
+
+    # ── Package / system info (read) ──
+    "dpkg", "apt-cache", "snap",
+    "systemctl", "journalctl", "dmesg",
+    "timedatectl", "localectl", "hostnamectl",
+
+    # ── Git (read) ──
+    "git",       # git status / log / diff  (brain should not git push/commit)
+
+    # ── Python / dev info ──
+    "python", "python3", "pip", "node", "npm",
 }
 
 # ── Destructive command keywords (always → visible terminal + confirm) ────────
