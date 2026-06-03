@@ -1,0 +1,50 @@
+2026-06-04 00:58:35,681 [main] Logging to logs/outputs/run_20260604_005835.txt
+2026-06-04 00:58:35,719 [llm_provider] [Ollama] model=qwen2.5:3b url=http://localhost:11434/api/chat
+2026-06-04 00:58:35,720 [llm_provider] LLM provider initialized: ollama/qwen2.5:3b
+2026-06-04 00:58:35,720 [main] LLM backend: ollama/qwen2.5:3b
+2026-06-04 00:58:35,721 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-04 00:58:35,721 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-04 00:58:35,722 [ipc_bus] Registered handler: check_battery
+2026-06-04 00:58:35,722 [ipc_bus] Registered handler: get_active_window
+2026-06-04 00:58:35,722 [ipc_bus] Registered handler: read_notifications
+2026-06-04 00:58:35,722 [sysadmin] SysAdmin agent registered ✓
+2026-06-04 00:58:35,722 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-04 00:58:35,722 [ipc_bus] Registered handler: update_memory
+2026-06-04 00:58:35,722 [ipc_bus] Registered handler: fetch_memory
+2026-06-04 00:58:35,722 [memory_agent] Memory agent registered ✓
+2026-06-04 00:58:40,564 [state_machine] State: IDLE → THINKING
+2026-06-04 00:58:40,574 [brain] Unified call for: hii whats ur name?
+2026-06-04 00:58:43,502 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 00:58:43,503 [brain] Unified raw: hi there! My name is Mr Meeseeks. How can I assist you today?
+2026-06-04 00:58:43,503 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-04 00:58:43,504 [memory_agent] Memory updated: last_interaction
+2026-06-04 00:58:43,504 [state_machine] State: THINKING → IDLE
+2026-06-04 00:58:50,981 [state_machine] State: IDLE → THINKING
+2026-06-04 00:58:50,992 [brain] Unified call for: do you know my name?
+2026-06-04 00:58:51,736 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 00:58:51,737 [brain] Unified raw: I don't have a specific memory of your name from our previous interactions. Could you please tell me what you prefer to be called?
+2026-06-04 00:58:51,737 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-04 00:58:51,737 [memory_agent] Memory updated: last_interaction
+2026-06-04 00:58:51,737 [state_machine] State: THINKING → IDLE
+2026-06-04 00:59:02,870 [state_machine] State: IDLE → THINKING
+2026-06-04 00:59:02,881 [brain] Unified call for: can you find it out
+2026-06-04 00:59:04,166 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 00:59:04,167 [brain] Unified raw: {"tool": "fetch_memory", "args": {"keys": ["name"]}}
+2026-06-04 00:59:04,167 [brain] Unified → AGENTIC (tool: fetch_memory)
+2026-06-04 00:59:04,170 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 00:59:04,170 [brain] Dispatching → fetch_memory({'keys': ['name']})
+2026-06-04 00:59:04,170 [brain] Result: {'name': 'edset'}
+2026-06-04 00:59:04,171 [brain] ReAct step 2/10
+2026-06-04 00:59:15,191 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 00:59:15,192 [brain] Raw output: { "thought": "I found out your name is edset.", "tool": "done", "args": {"speech": "Your name is edset. How can I assist you further?"}}
+2026-06-04 00:59:15,192 [brain] Thought: I found out your name is edset.
+2026-06-04 00:59:15,192 [brain] ReAct done. Speech: Your name is edset. How can I assist you further?
+2026-06-04 00:59:15,192 [memory_agent] Memory updated: last_interaction
+2026-06-04 00:59:15,192 [state_machine] State: THINKING → IDLE
+2026-06-04 00:59:29,096 [state_machine] State: IDLE → THINKING
+2026-06-04 00:59:29,106 [brain] Unified call for: what is my naam
+2026-06-04 00:59:33,477 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 00:59:33,478 [brain] Unified raw: It seems like there might be a mix-up with the names we're using. You mentioned your name as "edset" earlier, and now it's being referred to as "naam". Could you please clarify which name you prefer t
+2026-06-04 00:59:33,478 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-04 00:59:33,478 [memory_agent] Memory updated: last_interaction
+2026-06-04 00:59:33,478 [state_machine] State: THINKING → IDLE

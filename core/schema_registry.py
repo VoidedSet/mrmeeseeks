@@ -68,12 +68,16 @@ TOOL_SCHEMAS = {
     },
 
     # ── Memory ──
+    "list_memory_keys": {
+        "description": "List all keys stored in memory. Call this first when you don't know the exact key name.",
+        "args": {}
+    },
     "update_memory": {
         "description": "Save a fact or preference to persistent memory.",
         "args": {"key": "string — topic key", "data": "any — data to store"}
     },
     "fetch_memory": {
-        "description": "Retrieve facts from memory by keys.",
+        "description": "Retrieve facts from memory by keys. Uses fuzzy matching — approximate key names work.",
         "args": {"keys": "list of strings — keys to retrieve"}
     },
 
@@ -115,6 +119,7 @@ REQUIRED_ARGS: dict[str, list[str]] = {
     "get_active_window":    [],
     "read_notifications":   [],
     "open_visible_terminal":["cmd"],
+    "list_memory_keys":     [],
     "update_memory":        ["key", "data"],
     "fetch_memory":         ["keys"],
     "simple_scrape":        ["query"],

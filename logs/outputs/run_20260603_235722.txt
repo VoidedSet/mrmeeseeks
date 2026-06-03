@@ -1,0 +1,23 @@
+2026-06-03 23:57:22,134 [main] Logging to logs/outputs/run_20260603_235722.txt
+2026-06-03 23:57:22,170 [llm_provider] [Ollama] model=qwen2.5:3b url=http://localhost:11434/api/chat
+2026-06-03 23:57:22,170 [llm_provider] LLM provider initialized: ollama/qwen2.5:3b
+2026-06-03 23:57:22,170 [main] LLM backend: ollama/qwen2.5:3b
+2026-06-03 23:57:22,172 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-03 23:57:22,172 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-03 23:57:22,172 [ipc_bus] Registered handler: check_battery
+2026-06-03 23:57:22,172 [ipc_bus] Registered handler: get_active_window
+2026-06-03 23:57:22,172 [ipc_bus] Registered handler: read_notifications
+2026-06-03 23:57:22,172 [sysadmin] SysAdmin agent registered ✓
+2026-06-03 23:57:22,172 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-03 23:57:22,172 [ipc_bus] Registered handler: update_memory
+2026-06-03 23:57:22,172 [ipc_bus] Registered handler: fetch_memory
+2026-06-03 23:57:22,172 [memory_agent] Memory agent registered ✓
+2026-06-03 23:57:24,146 [state_machine] State: IDLE → THINKING
+2026-06-03 23:57:24,159 [brain] Intent: agentic for: hii
+2026-06-03 23:57:24,160 [brain] ReAct step 1/10
+2026-06-03 23:57:36,527 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-03 23:57:36,527 [brain] Raw output: {"thought": "The user greeted me, I should respond with a greeting.", "tool": "done", "args": {"speech": "Hello! How can I assist you today?"}}
+2026-06-03 23:57:36,528 [brain] Thought: The user greeted me, I should respond with a greeting.
+2026-06-03 23:57:36,528 [brain] ReAct done. Speech: Hello! How can I assist you today?
+2026-06-03 23:57:36,528 [memory_agent] Memory updated: last_interaction
+2026-06-03 23:57:36,528 [state_machine] State: THINKING → IDLE

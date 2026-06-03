@@ -1,17 +1,18 @@
 """
 brain.py — Mr Meeseeks Core Brain
 ReAct loop coordinator. Provider-agnostic (Groq / Ollama via llm_provider.py).
-Outputs strict JSON tool calls only. No free text dispatch.
 
 Routing:
-  CONVERSATIONAL → single LLM call, no tools, returns text directly
-  AGENTIC        → full ReAct loop with tool dispatch
+  Unified first call → model outputs plain text → return directly (conversational)
+                     → model outputs JSON tool call → enter ReAct loop (agentic)
 
-Both paths share the same ConversationHistory, so context is always preserved.
+No regex classifier. The model decides. One lightweight LLM call for simple queries,
+one call (reused as react step 1) + N tool calls for agentic tasks.
 """
 
 import asyncio
 import json
+import os
 import re
 import time
 import logging
@@ -39,133 +40,152 @@ _RETRY_HINT = (
     "Your last response was not valid JSON. "
     "Output ONLY a single JSON object — no other text, no markdown:\n"
     '{"thought": "your reasoning", "tool": "tool_name", "args": {...}}\n'
-    "Or if finished:\n"
-    '{"thought": "done", "tool": "done", "args": {"speech": "your spoken reply"}}'
+    "Exact arg names matter. Examples:\n"
+    '  run_bg_cmd    -> {"tool": "run_bg_cmd", "args": {"cmd": "head -n 10 /path/file"}}\n'
+    '  fetch_memory  -> {"tool": "fetch_memory", "args": {"keys": ["name"]}}\n'
+    '  update_memory -> {"tool": "update_memory", "args": {"key": "name", "data": "kshayik"}}\n'
+    '  done          -> {"tool": "done", "args": {"speech": "your spoken reply"}}'
 )
 
 
-# ── Intent Classification ─────────────────────────────────────────────────────
-# Patterns that clearly do NOT need tool calls.
-# Matched against lowercase-stripped input. Ordering matters — more specific first.
-_CONVERSATIONAL_PATTERNS = [
-    # Greetings / social
-    r"^(hi|hello|hey|howdy|sup|yo|hiya|greetings)\b",
-    r"^(good (morning|evening|afternoon|night))\b",
-    r"^(how are you|how's it going|what's up|how do you do)\b",
-    r"^(thanks|thank you|cheers|appreciated|thx|ty)\b",
-    r"^(ok|okay|cool|got it|understood|sure|alright|sounds good|great|nice)\b",
-    r"^(bye|goodbye|cya|see you|exit|quit)\b",
-
-    # Self-knowledge — answer from system prompt, no tools needed
-    r"(what tools|which tools|what can you|what are your capabilities)",
-    r"(what agents|which agents|what do you have access to)",
-    r"(who are you|what are you|describe yourself|introduce yourself)",
-    r"(how do you work|what is your purpose|what can you help with)",
-
-    # History questions — answer from conversation context, no tools needed
-    r"(what (did|have) (i|we)|questions? i asked|our conversation|what (was|were) (my|the) (question|request))",
-    r"(summarize (our|this|the) conversation|recap|list (everything|what) (we|i))",
-    r"(what did (you|mr meeseeks) (say|tell|respond|answer))",
-]
-
-_CONVERSATIONAL_RE = [re.compile(p, re.IGNORECASE) for p in _CONVERSATIONAL_PATTERNS]
-
-
-def classify_intent(user_input: str) -> str:
+# ── Unified System Prompt (first call — lightweight) ─────────────────────────
+def build_unified_prompt(context: dict) -> str:
     """
-    Fast regex classifier. Returns 'conversational' or 'agentic'.
-    No LLM call — zero latency overhead.
-    Ambiguous inputs default to 'agentic' (safe to over-route to ReAct).
+    Lightweight first-call prompt. Includes tool NAMES only (no full schemas).
+    Full schemas injected only when entering ReAct loop.
+    The model decides: plain text reply = conversational, JSON tool call = agentic.
     """
-    stripped = user_input.strip()
-    # very short inputs with no action verb are usually conversational
-    if len(stripped.split()) <= 3:
-        for pattern in _CONVERSATIONAL_RE:
-            if pattern.search(stripped):
-                return "conversational"
-    else:
-        for pattern in _CONVERSATIONAL_RE:
-            if pattern.search(stripped):
-                return "conversational"
-    return "agentic"
+    available  = bus.registered_tools()
+    memory_str = json.dumps(context.get("memory", {}), indent=2)
+
+    return (
+        "You are Mr Meeseeks — a local AI OS companion running on Ubuntu.\n"
+        "You are helpful, direct, and have personality.\n"
+        "\n"
+        "=== HOW TO RESPOND ===\n"
+        "You have two modes — pick based on what the user needs:\n"
+        "\n"
+        "1. PLAIN TEXT — for greetings, small talk, factual questions you already know.\n"
+        "   Just write your reply naturally. No JSON.\n"
+        "   Examples: hi, how are you, thanks, you da goat, tell me about yourself\n"
+        "\n"
+        "2. JSON TOOL CALL — for tasks needing system access, commands, or memory.\n"
+        "   Output ONLY this JSON — NO text before or after it:\n"
+        '   {"thought": "...", "tool": "tool_name", "args": {...}}\n'
+        "   Examples: open netflix, check battery, list open windows, remember my name\n"
+        "\n"
+        "CRITICAL for mode 2: output ONLY the JSON. Zero intro text. Zero explanation.\n"
+        "\n"
+        "=== TOOL RULES ===\n"
+        "run_bg_cmd           — use for ALL read operations: head, cat, grep, ls, find, ps, df\n"
+        "                       Reading a file: {\"tool\": \"run_bg_cmd\", \"args\": {\"cmd\": \"head -n 20 /path/to/file\"}}\n"
+        "open_visible_terminal — use ONLY for commands that MODIFY the system or launch apps\n"
+        "                       Opening URLs: {\"tool\": \"open_visible_terminal\", \"args\": {\"cmd\": \"xdg-open https://youtube.com\"}}\n"
+        "\n"
+        f"=== AVAILABLE TOOLS ===\n{available}\n"
+        "\n"
+        "Memory workflow:\n"
+        "  - Don't know the key? Call list_memory_keys first to see what's stored.\n"
+        '  - Recall: {"tool": "fetch_memory", "args": {"keys": ["name"]}}\n'
+        '  - Save:   {"tool": "update_memory", "args": {"key": "name", "data": "kshayik"}}\n'
+        "\n"
+        "=== CURRENT CONTEXT ===\n"
+        f"time          : {context.get('time', datetime.now().strftime('%H:%M'))}\n"
+        f"battery       : {context.get('battery', 'unknown')}\n"
+        f"active_window : {context.get('active_window', 'unknown')}\n"
+        f"working_dir   : {context.get('cwd', 'unknown')}\n"
+        f"logs_dir      : {context.get('logs_dir', 'unknown')}\n"
+        "\n"
+        "=== INJECTED MEMORY ===\n"
+        + (memory_str if memory_str != "{}" else "(empty — nothing stored yet)")
+    )
 
 
-# ── Conversational System Prompt ──────────────────────────────────────────────
-def build_conversational_prompt(context: dict) -> str:
-    return f"""You are Mr Meeseeks — a local AI OS companion running on Ubuntu.
-You are helpful, direct, and have a personality. You're talkative but not verbose.
-
-This is a CONVERSATIONAL response — no tools needed. Respond naturally in plain text.
-
-Rules:
-- Answer from your own knowledge and the conversation history below.
-- If asked what tools or agents you have, tell them from the list: {bus.registered_tools()}
-- If asked about conversation history, look through the messages provided and summarize accurately.
-- Do NOT ask "Is there anything else I can help with?" — it's annoying. Just answer.
-- Be concise. 1-3 sentences max unless a longer answer is clearly needed.
-
-Current context:
-  time: {context.get("time", datetime.now().strftime("%H:%M"))}
-  battery: {context.get("battery", "unknown")}
-  active window: {context.get("active_window", "unknown")}
-"""
-
-
-# ── Agentic System Prompt ─────────────────────────────────────────────────────
+# ── Agentic System Prompt (ReAct loop — full schemas) ────────────────────────
 def build_system_prompt(context: dict) -> str:
     available   = bus.registered_tools()
     schemas_str = json.dumps(TOOL_SCHEMAS, indent=2)
     memory_str  = json.dumps(context.get("memory", {}), indent=2)
     events_str  = json.dumps(context.get("recent_events", [])[-5:], indent=2)
 
-    return f"""You are Mr Meeseeks — a local AI OS companion running on Ubuntu.
-You are helpful, direct, and talkative. You assist with coding, system tasks, and research.
-
-═══ STRICT OUTPUT RULES ═══
-1. Output ONLY valid JSON. Zero free text. Zero markdown. Zero explanation outside JSON.
-2. One JSON object per response.
-3. When all tasks done, emit the "done" tool with your spoken response.
-4. NEVER guess coordinates — call get_ui_elements first if you need x,y.
-5. Safety gate handles destructive commands — never emit them in run_bg_cmd.
-6. If a tool returns an error, reason about it and try a DIFFERENT approach.
-7. If you cannot complete a task with available tools, emit done and explain honestly.
-
-═══ WHEN NOT TO USE TOOLS ═══
-Answer from context/history WITHOUT tool calls for:
-- Questions about yourself, your tools, your capabilities → emit done immediately with answer
-- Questions about past conversation → the full conversation history is in your messages context
-- Greetings, acknowledgements, factual knowledge questions → emit done immediately
-- Anything you already know the answer to without running a command
-
-═══ TOOL CALL FORMAT ═══
-{{"thought": "I need to check disk usage", "tool": "run_bg_cmd", "args": {{"cmd": "df -h"}}}}
-{{"thought": "I have the answer, no more tools needed", "tool": "done", "args": {{"speech": "Your disk is 60% full."}}}}
-
-═══ REGISTERED TOOLS (only call these) ═══
-{available}
-
-═══ FULL TOOL SCHEMAS ═══
-{schemas_str}
-
-═══ CURRENT CONTEXT ═══
-active_window : {context.get("active_window", "unknown")}
-battery       : {context.get("battery", "unknown")}
-time          : {context.get("time", datetime.now().strftime("%H:%M"))}
-recent_events : {events_str}
-
-═══ INJECTED MEMORY ═══
-{memory_str}
-
-═══ EXAMPLES ═══
-User: "what tools do you have?"
-→ {{"thought": "This is a self-knowledge question. I know my tools from the registered list.", "tool": "done", "args": {{"speech": "I have access to: run_bg_cmd, check_battery, get_active_window, open_visible_terminal, update_memory, fetch_memory."}}}}
-
-User: "what did I ask you before?"
-→ {{"thought": "The user is asking about conversation history. I can see all prior messages in my context.", "tool": "done", "args": {{"speech": "You've asked about X, Y, and Z so far."}}}}
-
-User: "list all open windows"
-→ {{"thought": "I can use wmctrl or xdotool to list open windows.", "tool": "run_bg_cmd", "args": {{"cmd": "wmctrl -l"}}}}
-"""
+    return (
+        "You are Mr Meeseeks — a local AI OS companion running on Ubuntu.\n"
+        "You assist with coding, system tasks, and research.\n"
+        "\n"
+        "=== STRICT OUTPUT RULES ===\n"
+        "1. Output ONLY valid JSON. Zero free text. Zero markdown.\n"
+        "2. One JSON object per response.\n"
+        "3. When done, emit the 'done' tool with your spoken response.\n"
+        "4. NEVER guess coordinates — call get_ui_elements first.\n"
+        "5. Never emit destructive commands in run_bg_cmd.\n"
+        "6. If a tool returns an error, try a DIFFERENT approach.\n"
+        "7. If you cannot complete a task, emit done and explain honestly.\n"
+        "\n"
+        "=== TOOL USAGE RULES ===\n"
+        "run_bg_cmd:\n"
+        "  USE for ALL read-only operations: head, cat, grep, ls, find, ps, df, free, wmctrl, etc.\n"
+        '  Reading files: {"tool": "run_bg_cmd", "args": {"cmd": "head -n 20 /path/to/file"}}\n'
+        '  Listing windows: {"tool": "run_bg_cmd", "args": {"cmd": "wmctrl -l"}}\n'
+        "  DO NOT use for write/install/execute operations.\n"
+        "\n"
+        "open_visible_terminal:\n"
+        "  USE ONLY for commands that modify the system or launch GUI apps.\n"
+        '  Opening URLs: {"tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://youtube.com"}}\n'
+        "  DO NOT use for reading files or read-only commands.\n"
+        "  DO NOT invent commands that don't exist (e.g. xdg-query does not exist).\n"
+        "\n"
+        "=== WHEN NOT TO USE TOOLS ===\n"
+        "Answer from context/history WITHOUT tools for:\n"
+        "- Questions about yourself or your capabilities -> emit done immediately\n"
+        "- Questions about past conversation -> conversation history is in your messages\n"
+        "- Greetings, factual knowledge -> emit done immediately\n"
+        "\n"
+        "=== MEMORY WORKFLOW ===\n"
+        "If unsure of exact key name:\n"
+        '  Step 1: {"tool": "list_memory_keys", "args": {}}   <- see all stored keys\n'
+        '  Step 2: {"tool": "fetch_memory", "args": {"keys": ["the_right_key"]}}\n'
+        "Never guess a key — always list first if uncertain.\n"
+        "\n"
+        "=== EXACT ARG NAMES ===\n"
+        "run_bg_cmd           -> args.cmd    (string)\n"
+        "open_visible_terminal -> args.cmd   (string)\n"
+        "update_memory        -> args.key, args.data\n"
+        "fetch_memory         -> args.keys   (LIST of strings)\n"
+        "done                 -> args.speech (string)\n"
+        "\n"
+        f"=== REGISTERED TOOLS ===\n{available}\n"
+        "\n"
+        f"=== FULL TOOL SCHEMAS ===\n{schemas_str}\n"
+        "\n"
+        "=== CURRENT CONTEXT ===\n"
+        f"active_window : {context.get('active_window', 'unknown')}\n"
+        f"battery       : {context.get('battery', 'unknown')}\n"
+        f"time          : {context.get('time', datetime.now().strftime('%H:%M'))}\n"
+        f"working_dir   : {context.get('cwd', 'unknown')}\n"
+        f"logs_dir      : {context.get('logs_dir', 'unknown')}\n"
+        f"recent_events : {events_str}\n"
+        "\n"
+        "=== INJECTED MEMORY ===\n"
+        + (memory_str if memory_str != "{}" else "(empty)")
+        + "\n\n"
+        "=== EXAMPLES ===\n"
+        'User: "list all open windows"\n'
+        '-> {"thought": "wmctrl lists all windows.", "tool": "run_bg_cmd", "args": {"cmd": "wmctrl -l"}}\n'
+        "\n"
+        'User: "read first 10 lines of /home/user/file.txt"\n'
+        '-> {"thought": "head is read-only, use run_bg_cmd.", "tool": "run_bg_cmd", "args": {"cmd": "head -n 10 /home/user/file.txt"}}\n'
+        "\n"
+        'User: "open youtube"\n'
+        '-> {"thought": "xdg-open launches browser, use open_visible_terminal.", "tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://youtube.com"}}\n'
+        "\n"
+        'User: "what is my city?"\n'
+        '-> {"thought": "Not sure of exact key, list memory keys first.", "tool": "list_memory_keys", "args": {}}\n'
+        '   (sees {"keys": ["city_name", "name"]})\n'
+        '-> {"thought": "Key is city_name.", "tool": "fetch_memory", "args": {"keys": ["city_name"]}}\n'
+        "\n"
+        'User: "what did I ask before?"\n'
+        '-> {"thought": "Conversation history is in my context.", "tool": "done", "args": {"speech": "You asked about X and Y."}}\n'
+    )
 
 
 # ── Conversation History ──────────────────────────────────────────────────────
@@ -202,7 +222,6 @@ class ConversationHistory:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         raw_path  = f"logs/raw/chat_{timestamp}.json"
         try:
-            import os
             os.makedirs("logs/raw", exist_ok=True)
             with open(raw_path, "w") as f:
                 json.dump(self.messages, f, indent=2)
@@ -281,61 +300,77 @@ def parse_tool_call(raw: str) -> Optional[dict]:
     return None
 
 
-# ── Direct Conversational Response ───────────────────────────────────────────
-async def direct_response(
+# ── Unified First Call ────────────────────────────────────────────────────────
+async def unified_first_call(
     user_input: str,
     history: ConversationHistory,
     context: dict,
-) -> str:
+) -> tuple[Optional[str], Optional[dict]]:
     """
-    Single LLM call for conversational inputs.
-    No tool dispatch. No ReAct loop.
-    Uses full conversation history so the model can answer "what did I ask?" accurately.
+    Single lightweight LLM call. The model decides its own routing.
+
+    Returns:
+      (plain_text, None)   — conversational response, return directly
+      (None, tool_call)    — model wants to use a tool, enter ReAct loop
+      (error_text, None)   — LLM failure
     """
     provider = llm_mod.provider
     if provider is None:
-        return "LLM provider not initialized."
+        return "LLM provider not initialized.", None
 
-    system_prompt = build_conversational_prompt(context)
+    system_prompt = build_unified_prompt(context)
 
-    # Include full history so model can answer history questions accurately
     messages = history.messages.copy()
     messages.append({"role": "user", "content": user_input})
 
-    log.info("Routing → CONVERSATIONAL (no tools)")
+    log.info(f"Unified call for: {user_input[:60]}")
 
     try:
-        # For Groq (json_object mode), we ask for JSON with a "response" field.
-        # For Ollama, the model returns plain text naturally.
-        # We try plain text first and only parse JSON if it looks like it.
-        response = await provider.complete(
+        raw = await provider.complete(
             system_prompt=system_prompt,
             messages=messages,
             temperature=0.5,
             max_tokens=300,
-            force_json=False,   # conversational — plain text is fine
+            force_json=False,  # model picks plain text or JSON naturally
         )
     except Exception as e:
-        log.error(f"Conversational LLM call failed: {e}")
-        return f"Sorry, something went wrong: {e}"
+        log.error(f"Unified LLM call failed: {e}")
+        return f"Sorry, something went wrong: {e}", None
 
-    # If provider forced JSON (Groq json_object mode), extract the response field
-    response = response.strip()
-    if response.startswith("{"):
+    raw = raw.strip()
+    log.info(f"Unified raw: {raw[:200]}")
+
+    # Try to parse as a tool call
+    tool_call = parse_tool_call(raw)
+
+    if tool_call is not None:
+        valid, error = validate_tool_call(tool_call)
+        if valid:
+            log.info(f"Unified → AGENTIC (tool: {tool_call.get('tool')})")
+            return None, tool_call
+        else:
+            # Invalid tool call — enter react to self-correct with schema feedback
+            log.warning(f"Unified tool call invalid: {error} — entering react to self-correct")
+            return None, tool_call
+
+    # Plain text — conversational
+    log.info("Unified → CONVERSATIONAL (plain text)")
+
+    # Handle edge case: Groq json_object mode forces JSON even with force_json=False
+    if raw.startswith("{"):
         try:
-            parsed = json.loads(response)
-            # Handle both {"response": "..."} and {"speech": "..."} and {"tool": "done", ...}
+            parsed = json.loads(raw)
             text = (
                 parsed.get("response")
                 or parsed.get("speech")
                 or parsed.get("args", {}).get("speech")
-                or response
+                or raw
             )
-            return str(text)
+            return str(text), None
         except json.JSONDecodeError:
             pass
 
-    return response
+    return raw, None
 
 
 # ── ReAct Loop ────────────────────────────────────────────────────────────────
@@ -343,11 +378,15 @@ async def react_loop(
     user_input: str,
     history: ConversationHistory,
     context: dict,
+    first_tool_call: Optional[dict] = None,
 ) -> str:
     """
     Full ReAct loop for agentic inputs.
     Think → emit tool call → observe result → repeat → done.
     Returns the final speech text.
+
+    If first_tool_call is provided (from unified_first_call), it is used as
+    step 1's output — no extra LLM call wasted.
 
     Protections:
     - MAX_REACT_STEPS hard limit
@@ -372,6 +411,45 @@ async def react_loop(
     # Repeated action detection: track (tool_name, serialized_args) pairs
     seen_actions: set[str] = set()
 
+    # ── Optionally inject the pre-parsed first tool call ─────────────────────
+    if first_tool_call is not None:
+        steps += 1
+        log.info(f"ReAct step {steps}/{MAX_REACT_STEPS} (pre-parsed from unified call)")
+
+        tool_name = first_tool_call.get("tool")
+        tool_args = first_tool_call.get("args", {})
+        thought   = first_tool_call.get("thought", "")
+
+        if thought:
+            log.info(f"Thought: {thought}")
+
+        # Validate (unified call may have passed invalid tool call)
+        valid, error = validate_tool_call(first_tool_call)
+        if not valid:
+            log.warning(f"Pre-parsed tool invalid: {error}")
+            observations.append(
+                f"ERROR: {error}. "
+                f"Registered tools: {bus.registered_tools()}\n"
+                f"{_RETRY_HINT}"
+            )
+        elif tool_name == "done":
+            speech = tool_args.get("speech", "Done.")
+            history.add("assistant", json.dumps(first_tool_call))
+            log.info(f"ReAct done (immediate). Speech: {speech}")
+            return speech
+        else:
+            action_key = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}"
+            seen_actions.add(action_key)
+
+            log.info(f"Dispatching → {tool_name}({tool_args})")
+            result = await bus.dispatch(tool_name, tool_args)
+            log.info(f"Result: {str(result)[:300]}")
+
+            observations.append(f"{tool_name} -> {json.dumps(result)}")
+            history.add("assistant", json.dumps(first_tool_call))
+            history.add("user", f"[Tool result]: {json.dumps(result)}")
+
+    # ── Main ReAct loop ───────────────────────────────────────────────────────
     while steps < MAX_REACT_STEPS:
         steps += 1
         log.info(f"ReAct step {steps}/{MAX_REACT_STEPS}")
@@ -442,7 +520,6 @@ async def react_loop(
         action_key = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}"
         if action_key in seen_actions:
             log.warning(f"Repeated action detected: {action_key}")
-            # Inject strong corrective signal and force wrap-up in 2 more steps
             observations.append(
                 f"LOOP DETECTED: You already tried '{tool_name}' with these exact args "
                 f"and got the same result. Do NOT repeat it again. "
@@ -458,7 +535,7 @@ async def react_loop(
         result = await bus.dispatch(tool_name, tool_args)
         log.info(f"Result: {str(result)[:300]}")
 
-        observations.append(f"{tool_name} → {json.dumps(result)}")
+        observations.append(f"{tool_name} -> {json.dumps(result)}")
         history.add("assistant", raw_output)
         history.add("user", f"[Tool result]: {json.dumps(result)}")
 
@@ -482,12 +559,16 @@ async def build_context(memory_agent, kernel_events: list) -> dict:
     if memory_agent and keywords:
         memory = await memory_agent.fetch_memory(keywords)
 
+    cwd = os.getcwd()
+
     return {
         "active_window": active_window,
         "battery":       battery,
         "time":          datetime.now().strftime("%H:%M"),
         "recent_events": kernel_events[-10:],
         "memory":        memory,
+        "cwd":           cwd,
+        "logs_dir":      os.path.join(cwd, "logs", "outputs"),
     }
 
 
@@ -528,27 +609,29 @@ class Brain:
 
     async def process(self, user_input: str) -> str:
         """
-        Main entry point. Routes to conversational or agentic path.
-        Conversational: 1 LLM call, no tools, ~0.5-1s
-        Agentic: full ReAct loop, N LLM calls
+        Main entry point. Unified routing:
+          1. Single lightweight LLM call (unified_first_call)
+          2a. If plain text -> return directly (conversational path, 1 call total)
+          2b. If tool call -> enter react_loop reusing the tool call (agentic path)
         """
         await self.state_machine.transition(State.THINKING)
 
         context = await build_context(self.memory_agent, self.kernel_events)
 
-        intent = classify_intent(user_input)
-        log.info(f"Intent: {intent} for: {user_input[:60]}")
+        plain_text, tool_call = await unified_first_call(user_input, self.history, context)
 
-        if intent == "conversational":
-            speech = await direct_response(user_input, self.history, context)
-            # Still add to history so model has full context for follow-ups
+        if plain_text is not None:
+            # Conversational: model replied in plain text — done
             self.history.add("user", user_input)
-            self.history.add("assistant", speech)
+            self.history.add("assistant", plain_text)
+            speech = plain_text
         else:
+            # Agentic: model emitted a tool call — enter ReAct loop
             speech = await react_loop(
                 user_input=user_input,
                 history=self.history,
                 context=context,
+                first_tool_call=tool_call,
             )
 
         if self.memory_agent:
@@ -557,7 +640,6 @@ class Brain:
                 {
                     "user":     user_input,
                     "response": speech,
-                    "intent":   intent,
                     "ts":       datetime.now().isoformat(),
                 }
             )

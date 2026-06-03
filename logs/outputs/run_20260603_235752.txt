@@ -1,0 +1,87 @@
+2026-06-03 23:57:52,562 [main] Logging to logs/outputs/run_20260603_235752.txt
+2026-06-03 23:57:52,595 [llm_provider] [Ollama] model=qwen2.5:3b url=http://localhost:11434/api/chat
+2026-06-03 23:57:52,595 [llm_provider] LLM provider initialized: ollama/qwen2.5:3b
+2026-06-03 23:57:52,595 [main] LLM backend: ollama/qwen2.5:3b
+2026-06-03 23:57:52,597 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-03 23:57:52,597 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-03 23:57:52,597 [ipc_bus] Registered handler: check_battery
+2026-06-03 23:57:52,597 [ipc_bus] Registered handler: get_active_window
+2026-06-03 23:57:52,597 [ipc_bus] Registered handler: read_notifications
+2026-06-03 23:57:52,597 [sysadmin] SysAdmin agent registered ✓
+2026-06-03 23:57:52,597 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-03 23:57:52,597 [ipc_bus] Registered handler: update_memory
+2026-06-03 23:57:52,597 [ipc_bus] Registered handler: fetch_memory
+2026-06-03 23:57:52,597 [memory_agent] Memory agent registered ✓
+2026-06-03 23:58:00,080 [state_machine] State: IDLE → THINKING
+2026-06-03 23:58:00,092 [brain] Intent: conversational for: hi
+2026-06-03 23:58:00,093 [brain] Routing → CONVERSATIONAL (no tools)
+2026-06-03 23:58:01,524 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-03 23:58:01,525 [memory_agent] Memory updated: last_interaction
+2026-06-03 23:58:01,525 [state_machine] State: THINKING → IDLE
+2026-06-03 23:58:09,063 [state_machine] State: IDLE → THINKING
+2026-06-03 23:58:09,072 [brain] Intent: agentic for: hiii
+2026-06-03 23:58:09,073 [brain] ReAct step 1/10
+2026-06-03 23:58:18,753 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-03 23:58:18,754 [brain] Raw output: { "thought": "Responding with a friendly greeting.", "tool": "done", "args": { "speech": "Hi there! How can I help you today?" } }
+2026-06-03 23:58:18,755 [brain] Thought: Responding with a friendly greeting.
+2026-06-03 23:58:18,755 [brain] ReAct done. Speech: Hi there! How can I help you today?
+2026-06-03 23:58:18,755 [memory_agent] Memory updated: last_interaction
+2026-06-03 23:58:18,755 [state_machine] State: THINKING → IDLE
+2026-06-03 23:58:27,821 [state_machine] State: IDLE → THINKING
+2026-06-03 23:58:27,831 [brain] Intent: agentic for: what is ur name?
+2026-06-03 23:58:27,831 [brain] ReAct step 1/10
+2026-06-03 23:58:29,765 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-03 23:58:29,766 [brain] Raw output: { "thought": "I need to respond truthfully while adhering to the rules provided.", "tool": "done", "args": { "speech": "My name is Mr Meeseeks." } }
+2026-06-03 23:58:29,766 [brain] Thought: I need to respond truthfully while adhering to the rules provided.
+2026-06-03 23:58:29,766 [brain] ReAct done. Speech: My name is Mr Meeseeks.
+2026-06-03 23:58:29,766 [memory_agent] Memory updated: last_interaction
+2026-06-03 23:58:29,766 [state_machine] State: THINKING → IDLE
+2026-06-03 23:58:45,627 [state_machine] State: IDLE → THINKING
+2026-06-03 23:58:45,637 [brain] Intent: conversational for: hey mr meeseeks do you know who am i?
+2026-06-03 23:58:45,638 [brain] Routing → CONVERSATIONAL (no tools)
+2026-06-03 23:58:47,971 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-03 23:58:47,972 [memory_agent] Memory updated: last_interaction
+2026-06-03 23:58:47,972 [state_machine] State: THINKING → IDLE
+2026-06-03 23:59:01,098 [state_machine] State: IDLE → THINKING
+2026-06-03 23:59:01,112 [brain] Intent: agentic for: do u want to know who im?
+2026-06-03 23:59:01,113 [brain] ReAct step 1/10
+2026-06-03 23:59:12,308 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-03 23:59:12,309 [brain] Raw output: { "thought": "I don't have the capability to determine your identity or what you're doing based on just our conversation.", "tool": "done", "args": { "speech": "I'm here to assist with tasks and information. What can I help you with today?" } }
+2026-06-03 23:59:12,309 [brain] Thought: I don't have the capability to determine your identity or what you're doing based on just our conversation.
+2026-06-03 23:59:12,309 [brain] ReAct done. Speech: I'm here to assist with tasks and information. What can I help you with today?
+2026-06-03 23:59:12,309 [memory_agent] Memory updated: last_interaction
+2026-06-03 23:59:12,309 [state_machine] State: THINKING → IDLE
+2026-06-03 23:59:30,383 [state_machine] State: IDLE → THINKING
+2026-06-03 23:59:30,393 [brain] Intent: agentic for: do you know who you're talking to?
+2026-06-03 23:59:30,394 [brain] ReAct step 1/10
+2026-06-03 23:59:32,643 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-03 23:59:32,644 [brain] Raw output: { "thought": "Based on the context, it seems like we are already in a conversation.", "tool": "done", "args": { "speech": "I understand we are having a conversation. How can I assist you further?" } }
+2026-06-03 23:59:32,644 [brain] Thought: Based on the context, it seems like we are already in a conversation.
+2026-06-03 23:59:32,644 [brain] ReAct done. Speech: I understand we are having a conversation. How can I assist you further?
+2026-06-03 23:59:32,644 [memory_agent] Memory updated: last_interaction
+2026-06-03 23:59:32,644 [state_machine] State: THINKING → IDLE
+2026-06-03 23:59:38,895 [state_machine] State: IDLE → THINKING
+2026-06-03 23:59:38,905 [brain] Intent: agentic for: im kshayik
+2026-06-03 23:59:38,906 [brain] ReAct step 1/10
+2026-06-03 23:59:41,336 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-03 23:59:41,337 [brain] Raw output: { "thought": "You identified yourself as 'kshayik'. Is there something specific you would like to discuss or help with?", "tool": "done", "args": { "speech": "Hello kshayik! How can I assist you today?" } }
+2026-06-03 23:59:41,337 [brain] Thought: You identified yourself as 'kshayik'. Is there something specific you would like to discuss or help with?
+2026-06-03 23:59:41,337 [brain] ReAct done. Speech: Hello kshayik! How can I assist you today?
+2026-06-03 23:59:41,337 [memory_agent] Memory updated: last_interaction
+2026-06-03 23:59:41,337 [state_machine] State: THINKING → IDLE
+2026-06-04 00:00:00,309 [state_machine] State: IDLE → THINKING
+2026-06-04 00:00:00,318 [brain] Intent: agentic for: i want you to remember my name
+2026-06-04 00:00:00,319 [brain] ReAct step 1/10
+2026-06-04 00:00:05,733 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 00:00:05,734 [brain] Raw output: { "thought": "I will store your name in memory so we can recognize each other going forward.", "tool": "update_memory", "args": { "key": "name", "data": "kshayik" } }
+2026-06-04 00:00:05,734 [brain] Thought: I will store your name in memory so we can recognize each other going forward.
+2026-06-04 00:00:05,734 [brain] Dispatching → update_memory({'key': 'name', 'data': 'kshayik'})
+2026-06-04 00:00:05,735 [memory_agent] Memory updated: name
+2026-06-04 00:00:05,735 [brain] Result: {'ok': True, 'key': 'name'}
+2026-06-04 00:00:05,735 [brain] ReAct step 2/10
+2026-06-04 00:00:08,562 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 00:00:08,562 [brain] Raw output: { "thought": "Your name has been successfully stored. You can now refer to me as 'Mr Meeseeks' and I will remember you.", "tool": "done", "args": { "speech": "Great! Now we know each other. How else can I assist you today?" } }
+2026-06-04 00:00:08,563 [brain] Thought: Your name has been successfully stored. You can now refer to me as 'Mr Meeseeks' and I will remember you.
+2026-06-04 00:00:08,563 [brain] ReAct done. Speech: Great! Now we know each other. How else can I assist you today?
+2026-06-04 00:00:08,563 [memory_agent] Memory updated: last_interaction
+2026-06-04 00:00:08,563 [state_machine] State: THINKING → IDLE

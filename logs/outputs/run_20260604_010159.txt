@@ -1,0 +1,43 @@
+2026-06-04 01:01:59,750 [main] Logging to logs/outputs/run_20260604_010159.txt
+2026-06-04 01:01:59,776 [llm_provider] [Ollama] model=qwen2.5:3b url=http://localhost:11434/api/chat
+2026-06-04 01:01:59,777 [llm_provider] LLM provider initialized: ollama/qwen2.5:3b
+2026-06-04 01:01:59,777 [main] LLM backend: ollama/qwen2.5:3b
+2026-06-04 01:01:59,777 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-04 01:01:59,777 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-04 01:01:59,778 [ipc_bus] Registered handler: check_battery
+2026-06-04 01:01:59,778 [ipc_bus] Registered handler: get_active_window
+2026-06-04 01:01:59,778 [ipc_bus] Registered handler: read_notifications
+2026-06-04 01:01:59,778 [sysadmin] SysAdmin agent registered ✓
+2026-06-04 01:01:59,778 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-04 01:01:59,778 [ipc_bus] Registered handler: update_memory
+2026-06-04 01:01:59,778 [ipc_bus] Registered handler: fetch_memory
+2026-06-04 01:01:59,778 [memory_agent] Memory agent registered ✓
+2026-06-04 01:02:09,529 [state_machine] State: IDLE → THINKING
+2026-06-04 01:02:09,540 [brain] Unified call for: hey can you tell whats my name and where do i stay?
+2026-06-04 01:02:12,484 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 01:02:12,485 [brain] Unified raw: {"tool": "fetch_memory", "args": {"keys": ["name", "location"]}}
+2026-06-04 01:02:12,485 [brain] Unified → AGENTIC (tool: fetch_memory)
+2026-06-04 01:02:12,485 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 01:02:12,486 [brain] Dispatching → fetch_memory({'keys': ['name', 'location']})
+2026-06-04 01:02:12,486 [memory_agent] Fuzzy match: 'name' → 'username'
+2026-06-04 01:02:12,486 [memory_agent] No match found for key 'location' (stored: ['naaam', 'last_interaction', 'username', 'city_name'])
+2026-06-04 01:02:12,486 [brain] Result: {'name': 'kshayik'}
+2026-06-04 01:02:12,486 [brain] ReAct step 2/10
+2026-06-04 01:02:23,044 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 01:02:23,045 [brain] Raw output: {"thought": "I found your name in memory. Now let's find where you stay.", "tool": "run_bg_cmd", "args": {"cmd": "whoami"}}
+2026-06-04 01:02:23,045 [brain] Thought: I found your name in memory. Now let's find where you stay.
+2026-06-04 01:02:23,045 [brain] Dispatching → run_bg_cmd({'cmd': 'whoami'})
+2026-06-04 01:02:23,057 [brain] Result: {'output': 'kshayik', 'exit_code': 0}
+2026-06-04 01:02:23,058 [brain] ReAct step 3/10
+2026-06-04 01:02:25,684 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 01:02:25,685 [brain] Raw output: {"thought": "I found your name, but I need to check further for where you stay.", "tool": "run_bg_cmd", "args": {"cmd": "grep -r '^HOME=' /"}}
+2026-06-04 01:02:25,685 [brain] Thought: I found your name, but I need to check further for where you stay.
+2026-06-04 01:02:25,685 [brain] Dispatching → run_bg_cmd({'cmd': "grep -r '^HOME=' /"})
+2026-06-04 01:02:35,702 [brain] Result: {'error': 'Command timed out after 10s'}
+2026-06-04 01:02:35,704 [brain] ReAct step 4/10
+2026-06-04 01:02:39,010 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 01:02:39,011 [brain] Raw output: {"thought": "I encountered an issue with fetching your home directory. Let's try another approach.", "tool": "run_bg_cmd", "args": {"cmd": "find /home -user kshayik"}}
+2026-06-04 01:02:39,012 [brain] Thought: I encountered an issue with fetching your home directory. Let's try another approach.
+2026-06-04 01:02:39,012 [brain] Dispatching → run_bg_cmd({'cmd': 'find /home -user kshayik'})
+2026-06-04 01:02:46,583 [brain] Result: {'output': '/home/kshayik\n/home/kshayik/.continue\n/home/kshayik/.continue/.continuerc.json\n/home/kshayik/.continue/index\n/home/kshayik/.continue/index/index.sqlite\n/home/kshayik/.continue/index/index.sqlite-wal\n/home/kshayik/.continue/index/globalContext.json\n/home/kshayik/.continue/index/ind
+2026-06-04 01:02:46,908 [brain] ReAct step 5/10
