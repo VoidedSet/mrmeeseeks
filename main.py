@@ -64,6 +64,9 @@ async def main():
     from agents.memory_agent import register as reg_memory
     memory = reg_memory()
 
+    from agents.web_agent import register as reg_web
+    reg_web()
+
     # ── Wire brain ───────────────────────────────────────────────────────────
     from core.brain import brain
     brain.inject_memory_agent(memory)

@@ -27,6 +27,8 @@ async def handle_run_bg_cmd(args: dict) -> dict:
             cmd, shell=True, capture_output=True, text=True, timeout=10
         )
         output = result.stdout.strip() or result.stderr.strip() or "(no output)"
+        if len(output) > 2000:
+            output = output[:2000] + "\n...[Output truncated due to length]"
         return {"output": output, "exit_code": result.returncode}
     except subprocess.TimeoutExpired:
         return {"error": "Command timed out after 10s"}
@@ -81,10 +83,22 @@ async def handle_read_notifications(args: dict) -> dict:
     return {"notifications": "notification reading not yet implemented"}
 
 
+async def handle_list_open_windows(args: dict) -> dict:
+    try:
+        result = subprocess.run(
+            "wmctrl -l",
+            shell=True, capture_output=True, text=True, timeout=5
+        )
+        return {"windows": result.stdout.strip() or "No open windows found or wmctrl not installed."}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 def register():
     bus.register("run_bg_cmd",            handle_run_bg_cmd)
     bus.register("open_visible_terminal", handle_open_visible_terminal)
     bus.register("check_battery",         handle_check_battery)
     bus.register("get_active_window",     handle_get_active_window)
+    bus.register("list_open_windows",     handle_list_open_windows)
     bus.register("read_notifications",    handle_read_notifications)
     log.info("SysAdmin agent registered ✓")

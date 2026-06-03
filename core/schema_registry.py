@@ -56,6 +56,10 @@ TOOL_SCHEMAS = {
         "description": "Get title and class of currently focused window.",
         "args": {}
     },
+    "list_open_windows": {
+        "description": "Get a list of all currently open window titles.",
+        "args": {}
+    },
     "read_notifications": {
         "description": "Read current desktop notifications.",
         "args": {}
@@ -117,6 +121,7 @@ REQUIRED_ARGS: dict[str, list[str]] = {
     "run_bg_cmd":           ["cmd"],
     "check_battery":        [],
     "get_active_window":    [],
+    "list_open_windows":    [],
     "read_notifications":   [],
     "open_visible_terminal":["cmd"],
     "list_memory_keys":     [],
