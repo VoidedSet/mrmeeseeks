@@ -9,8 +9,11 @@ import asyncio
 import subprocess
 import shlex
 import logging
+import os
+import glob
 from core.ipc_bus import bus
 from core.schema_registry import READ_ONLY_CMDS, is_destructive
+import safety.gate as gate
 
 log = logging.getLogger("sysadmin")
 
@@ -40,23 +43,40 @@ async def handle_open_visible_terminal(args: dict) -> dict:
     cmd = args.get("cmd", "").strip()
 
     if is_destructive(cmd):
-        # pause — let safety gate handle (for now just log + return)
-        log.warning(f"DESTRUCTIVE CMD BLOCKED: {cmd}")
-        return {"error": f"Destructive command detected: '{cmd}'. Needs explicit user confirmation."}
+        approved = await gate.confirm_destructive(cmd)
+        if not approved:
+            return {"error": f"User denied destructive command: '{cmd}'"}
 
     try:
-        # open gnome-terminal, run cmd, keep window open after
-        terminal_cmd = f'gnome-terminal -- bash -c "{cmd}; exec bash"'
-        subprocess.Popen(terminal_cmd, shell=True)
-        return {"output": f"Opened terminal running: {cmd}"}
+        import tempfile
+        temp_log = tempfile.mktemp(prefix="meeseeks_")
+        
+        # open gnome-terminal, run cmd, capture output, wait 5s, close
+        bash_script = f"{cmd} 2>&1 | tee {temp_log}; echo ''; echo '[Command finished. Closing in 5 seconds...]'; sleep 5"
+        terminal_cmd = f"gnome-terminal --wait -- bash -c {shlex.quote(bash_script)}"
+        
+        proc = await asyncio.create_subprocess_shell(terminal_cmd)
+        await proc.communicate()
+        
+        output = "(no output)"
+        if os.path.exists(temp_log):
+            with open(temp_log, "r") as f:
+                output = f.read().strip() or "(no output)"
+            os.remove(temp_log)
+            
+        return {"output": output}
     except Exception as e:
         return {"error": str(e)}
 
 
 async def handle_check_battery(args: dict) -> dict:
     try:
+        bats = glob.glob("/sys/class/power_supply/BAT*")
+        if not bats:
+            return {"error": "No battery found (/sys/class/power_supply/BAT*)."}
+        bat = bats[0]
         result = subprocess.run(
-            "cat /sys/class/power_supply/BAT0/capacity && cat /sys/class/power_supply/BAT0/status",
+            f"cat {bat}/capacity && cat {bat}/status",
             shell=True, capture_output=True, text=True, timeout=5
         )
         lines = result.stdout.strip().split("\n")

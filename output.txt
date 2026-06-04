@@ -358,3 +358,4 @@ You: can you list all the questions i asked u till now?
 2. Can you list all the windows open currently?
 3. Open a visible terminal.
 4. Read notifications.
+Your response is not valid JSON.

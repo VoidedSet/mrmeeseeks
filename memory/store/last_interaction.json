@@ -1,9 +1,8 @@
 {
   "data": {
-    "user": "what do u know about me?",
-    "response": "It seems like you might be looking for information stored in my memory that relates to you, but I don't have any specific details about you at the moment. Could you provide some context or a key question? I can then fetch relevant information from your profile if it exists.",
-    "ts": "2026-06-04T03:07:07.462018",
-    "intent": "agentic"
+    "user": "hi",
+    "response": "Hello there! How can I assist you today?",
+    "ts": "2026-06-04T14:34:41.232783"
   },
-  "updated_at": "2026-06-04T03:07:07.462157"
+  "updated_at": "2026-06-04T14:34:41.232967"
 }

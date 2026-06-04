@@ -1,0 +1,156 @@
+2026-06-04 13:57:47,447 [main] Logging to logs/outputs/run_20260604_135747.txt
+2026-06-04 13:57:47,515 [llm_provider] [Ollama] model=qwen2.5:3b url=http://localhost:11434/api/chat
+2026-06-04 13:57:47,515 [llm_provider] LLM provider initialized: ollama/qwen2.5:3b
+2026-06-04 13:57:47,515 [main] LLM backend: ollama/qwen2.5:3b
+2026-06-04 13:57:47,517 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-04 13:57:47,517 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-04 13:57:47,517 [ipc_bus] Registered handler: check_battery
+2026-06-04 13:57:47,517 [ipc_bus] Registered handler: get_active_window
+2026-06-04 13:57:47,517 [ipc_bus] Registered handler: list_open_windows
+2026-06-04 13:57:47,517 [ipc_bus] Registered handler: read_notifications
+2026-06-04 13:57:47,517 [sysadmin] SysAdmin agent registered ✓
+2026-06-04 13:57:47,517 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-04 13:57:47,517 [ipc_bus] Registered handler: list_memory_keys
+2026-06-04 13:57:47,517 [ipc_bus] Registered handler: update_memory
+2026-06-04 13:57:47,518 [ipc_bus] Registered handler: fetch_memory
+2026-06-04 13:57:47,518 [memory_agent] Memory agent registered ✓
+2026-06-04 13:57:47,518 [ipc_bus] Registered handler: simple_scrape
+2026-06-04 13:57:47,518 [ipc_bus] Registered handler: gui_research
+2026-06-04 13:57:47,518 [web_agent] Web agent registered ✓
+2026-06-04 13:57:47,581 [ipc_bus] Registered handler: move_mouse
+2026-06-04 13:57:47,581 [ipc_bus] Registered handler: click
+2026-06-04 13:57:47,581 [ipc_bus] Registered handler: type_text
+2026-06-04 13:57:47,581 [ipc_bus] Registered handler: key_press
+2026-06-04 13:57:47,581 [ipc_bus] Registered handler: scroll
+2026-06-04 13:57:47,581 [hands_agent] Hands agent registered ✓
+2026-06-04 13:57:47,601 [ipc_bus] Registered handler: get_ui_elements
+2026-06-04 13:57:47,601 [ipc_bus] Registered handler: read_element_text
+2026-06-04 13:57:47,601 [ipc_bus] Registered handler: find_element_by_label
+2026-06-04 13:57:47,601 [eyes_agent] Eyes agent registered ✓
+2026-06-04 13:57:59,922 [state_machine] State: IDLE → THINKING
+2026-06-04 13:57:59,928 [brain] Unified call for: hii
+2026-06-04 13:58:05,412 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 13:58:05,413 [brain] Unified raw: hi there! How can I assist you today?
+2026-06-04 13:58:05,413 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-04 13:58:05,414 [memory_agent] Memory updated: last_interaction
+2026-06-04 13:58:05,414 [state_machine] State: THINKING → IDLE
+2026-06-04 14:01:41,433 [state_machine] State: IDLE → THINKING
+2026-06-04 14:01:41,438 [brain] Unified call for: can you take a look at my screen and tell whats on
+2026-06-04 14:01:42,628 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:01:42,629 [brain] Unified raw: {"tool": "list_open_windows", "args": {}}
+2026-06-04 14:01:42,629 [brain] Unified → AGENTIC (tool: list_open_windows)
+2026-06-04 14:01:42,630 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 14:01:42,630 [brain] Dispatching → list_open_windows({})
+2026-06-04 14:01:42,635 [brain] Result: {'windows': '0x01800003 -1 kshayiks-hp-victus plank\n0x02200008 -1 kshayiks-hp-victus Desktop Icons 1\n0x03000004  0 kshayiks-hp-victus temp.txt - mr-meeseeks - Visual Studio Code\n0x04800004  0 kshayiks-hp-victus what is this project?\n0x0420000a  0 kshayiks-hp-victus Terminal'}
+2026-06-04 14:01:42,635 [brain] ReAct step 2/10
+2026-06-04 14:01:58,332 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:01:58,333 [brain] Raw output: { "thought": "I have identified the open windows on your screen.", "tool": "done", "args": {"speech": "You have the following windows open: \n- plank\n- Desktop Icons 1\n- temp.txt - mr-meeseeks - Visual Studio Code\n- what is this project?\n- Terminal"} }
+2026-06-04 14:01:58,333 [brain] Thought: I have identified the open windows on your screen.
+2026-06-04 14:01:58,333 [brain] ReAct done. Speech: You have the following windows open: 
+- plank
+- Desktop Icons 1
+- temp.txt - mr-meeseeks - Visual Studio Code
+- what is this project?
+- Terminal
+2026-06-04 14:01:58,341 [memory_agent] Memory updated: last_interaction
+2026-06-04 14:01:58,341 [state_machine] State: THINKING → IDLE
+2026-06-04 14:02:15,668 [state_machine] State: IDLE → THINKING
+2026-06-04 14:02:15,673 [brain] Unified call for: can you see all the ui elements that you can possibly click?
+2026-06-04 14:02:20,385 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:02:20,386 [brain] Unified raw: {"tool": "get_ui_elements", "args": {}}
+2026-06-04 14:02:20,386 [brain] Unified → AGENTIC (tool: get_ui_elements)
+2026-06-04 14:02:20,386 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 14:02:20,386 [brain] Dispatching → get_ui_elements({})
+2026-06-04 14:02:20,915 [brain] Result: {'by_app': {'gnome-shell': [{'id': '1', 'name': 'Firefox', 'role': 'push button', 'x': 635, 'y': 1023}, {'id': '2', 'name': 'Files', 'role': 'push button', 'x': 715, 'y': 1023}, {'id': '3', 'name': 'LibreOffice Writer', 'role': 'push button', 'x': 795, 'y': 1023}, {'id': '4', 'name': 'App Center', '
+2026-06-04 14:02:20,915 [brain] ReAct step 2/10
+2026-06-04 14:02:44,507 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:02:44,508 [brain] Raw output: { "total": 77}
+2026-06-04 14:02:44,515 [brain] Parse failure 1/3: { "total": 77}
+2026-06-04 14:02:44,515 [brain] ReAct step 3/10
+2026-06-04 14:03:10,344 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:03:10,345 [brain] Raw output: {"thought": "Given the result, I need to identify a relevant observation and tool usage. Since no specific question was asked about this data, let's assume we are looking for active tabs in the current window.", "tool": "get_active_tabs", "args": {"window_id": -2147483648}}
+2026-06-04 14:03:10,345 [brain] Schema validation failed: Unknown tool 'get_active_tabs'. Known tools: get_ui_elements, read_element_text, find_element_by_label, move_mouse, click, type_text, key_press, scroll, run_bg_cmd, check_battery, get_active_window, list_open_windows, read_notifications, open_visible_terminal, list_memory_keys, update_memory, fetch_memory, simple_scrape, gui_research, speak, done
+2026-06-04 14:03:10,345 [brain] ReAct step 4/10
+2026-06-04 14:03:34,139 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:03:34,140 [brain] Raw output: {"tool": "get_active_tabs", "args": {}}
+2026-06-04 14:03:34,140 [brain] Schema validation failed: Unknown tool 'get_active_tabs'. Known tools: get_ui_elements, read_element_text, find_element_by_label, move_mouse, click, type_text, key_press, scroll, run_bg_cmd, check_battery, get_active_window, list_open_windows, read_notifications, open_visible_terminal, list_memory_keys, update_memory, fetch_memory, simple_scrape, gui_research, speak, done
+2026-06-04 14:03:34,140 [brain] ReAct step 5/10
+2026-06-04 14:03:59,645 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:03:59,646 [brain] Raw output: {"tool": "done", "args": {"speech": "I couldn't find your operating system or active tabs information in the provided result. Please check if you have the necessary tools available."}}
+2026-06-04 14:03:59,653 [brain] ReAct done. Speech: I couldn't find your operating system or active tabs information in the provided result. Please check if you have the necessary tools available.
+2026-06-04 14:03:59,654 [memory_agent] Memory updated: last_interaction
+2026-06-04 14:03:59,654 [state_machine] State: THINKING → IDLE
+2026-06-04 14:04:31,745 [state_machine] State: IDLE → THINKING
+2026-06-04 14:04:31,750 [brain] Unified call for: can you see the elements in the currently active window? may
+2026-06-04 14:04:55,482 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:04:55,483 [brain] Unified raw: {"tool": "find", "args": {"element_type": "window", "filter": {"active": true}}}
+2026-06-04 14:04:55,483 [brain] Unified tool call invalid: Unknown tool 'find'. Known tools: get_ui_elements, read_element_text, find_element_by_label, move_mouse, click, type_text, key_press, scroll, run_bg_cmd, check_battery, get_active_window, list_open_windows, read_notifications, open_visible_terminal, list_memory_keys, update_memory, fetch_memory, simple_scrape, gui_research, speak, done — entering react to self-correct
+2026-06-04 14:04:55,483 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 14:04:55,483 [brain] Pre-parsed tool invalid: Unknown tool 'find'. Known tools: get_ui_elements, read_element_text, find_element_by_label, move_mouse, click, type_text, key_press, scroll, run_bg_cmd, check_battery, get_active_window, list_open_windows, read_notifications, open_visible_terminal, list_memory_keys, update_memory, fetch_memory, simple_scrape, gui_research, speak, done
+2026-06-04 14:04:55,484 [brain] ReAct step 2/10
+2026-06-04 14:05:09,747 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:05:09,748 [brain] Raw output: {"thought": "your reasoning", "tool": "get_ui_elements", "args": {}}
+2026-06-04 14:05:09,748 [brain] Thought: your reasoning
+2026-06-04 14:05:09,748 [brain] Dispatching → get_ui_elements({})
+2026-06-04 14:05:10,224 [brain] Result: {'by_app': {'gnome-shell': [{'id': '1', 'name': 'Firefox', 'role': 'push button', 'x': 637, 'y': 1010}, {'id': '2', 'name': 'Files', 'role': 'push button', 'x': 717, 'y': 1010}, {'id': '3', 'name': 'LibreOffice Writer', 'role': 'push button', 'x': 797, 'y': 1010}, {'id': '4', 'name': 'App Center', '
+2026-06-04 14:05:10,224 [brain] ReAct step 3/10
+2026-06-04 14:05:35,878 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:05:35,879 [brain] Raw output: {"done":"The terminal window contains a total of 76 elements including buttons, menus, and labels. It appears to be the standard interface for a terminal application with features such as zooming, full screen mode, read-only functionality, and various menu items for managing tabs and windows within 
+2026-06-04 14:05:35,879 [brain] Parse failure 1/3: {"done":"The terminal window contains a total of 76 elements including buttons, menus, and labels. It appears to be the standard interface for a terminal application with features such as zooming, ful
+2026-06-04 14:05:35,879 [brain] ReAct step 4/10
+2026-06-04 14:06:00,121 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:06:00,122 [brain] Raw output: {"thought": "your reasoning", "tool": "fetch_memory", "args": {"keys": ["total"]}}
+2026-06-04 14:06:00,132 [brain] Thought: your reasoning
+2026-06-04 14:06:00,132 [brain] Dispatching → fetch_memory({'keys': ['total']})
+2026-06-04 14:06:00,132 [memory_agent] No match found for key 'total' (stored: ['last_interaction'])
+2026-06-04 14:06:00,132 [brain] Result: {}
+2026-06-04 14:06:00,132 [brain] ReAct step 5/10
+2026-06-04 14:06:24,181 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:06:24,181 [brain] Raw output: {"thought": "your reasoning", "tool": "done", "args": {}}
+2026-06-04 14:06:24,189 [brain] Schema validation failed: Tool 'done' missing required arg 'speech'
+2026-06-04 14:06:24,189 [brain] ReAct step 6/10
+2026-06-04 14:06:48,741 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:06:48,742 [brain] Raw output: {"thought": "your reasoning", "tool": "done", "args": {"speech": "No information was found in the memory for the requested retrieval."}}
+2026-06-04 14:06:48,749 [brain] Thought: your reasoning
+2026-06-04 14:06:48,749 [brain] ReAct done. Speech: No information was found in the memory for the requested retrieval.
+2026-06-04 14:06:48,750 [memory_agent] Memory updated: last_interaction
+2026-06-04 14:06:48,750 [state_machine] State: THINKING → IDLE
+2026-06-04 14:08:17,230 [state_machine] State: IDLE → THINKING
+2026-06-04 14:08:17,245 [brain] Unified call for: can you list clickable buttons? on this screen?
+2026-06-04 14:08:41,190 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:08:41,191 [brain] Unified raw: {"thought": "listing all clickable UI elements on the current screen", "tool": "listClickableUIElements", "args": {"screenId": "current"}}
+2026-06-04 14:08:41,191 [brain] Unified tool call invalid: Unknown tool 'listClickableUIElements'. Known tools: get_ui_elements, read_element_text, find_element_by_label, move_mouse, click, type_text, key_press, scroll, run_bg_cmd, check_battery, get_active_window, list_open_windows, read_notifications, open_visible_terminal, list_memory_keys, update_memory, fetch_memory, simple_scrape, gui_research, speak, done — entering react to self-correct
+2026-06-04 14:08:41,191 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 14:08:41,191 [brain] Thought: listing all clickable UI elements on the current screen
+2026-06-04 14:08:41,191 [brain] Pre-parsed tool invalid: Unknown tool 'listClickableUIElements'. Known tools: get_ui_elements, read_element_text, find_element_by_label, move_mouse, click, type_text, key_press, scroll, run_bg_cmd, check_battery, get_active_window, list_open_windows, read_notifications, open_visible_terminal, list_memory_keys, update_memory, fetch_memory, simple_scrape, gui_research, speak, done
+2026-06-04 14:08:41,191 [brain] ReAct step 2/10
+2026-06-04 14:08:55,594 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:08:55,595 [brain] Raw output: {"thought": "your reasoning", "tool": "get_ui_elements", "args": {}}
+2026-06-04 14:08:55,595 [brain] Thought: your reasoning
+2026-06-04 14:08:55,595 [brain] Dispatching → get_ui_elements({})
+2026-06-04 14:08:56,023 [brain] Result: {'by_app': {'gnome-shell': [{'id': '1', 'name': 'Firefox', 'role': 'push button', 'x': 637, 'y': 1010}, {'id': '2', 'name': 'Files', 'role': 'push button', 'x': 717, 'y': 1010}, {'id': '3', 'name': 'LibreOffice Writer', 'role': 'push button', 'x': 797, 'y': 1010}, {'id': '4', 'name': 'App Center', '
+2026-06-04 14:08:56,023 [brain] ReAct step 3/10
+2026-06-04 14:09:39,563 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:09:39,564 [brain] Raw output: {"total": 76, "results": [{"id": 0, "type": "menu", "items": [{"label": "New Tab", "action": "44"}, {"label": "New Window", "action": "48"}, {"label": "Close Tab", "action": "50"}, {"label": "Close Window", "action": "51"}, {"label": "Copy", "action": "52"}, {"label": "Copy as HTML", "action": "53"}
+2026-06-04 14:09:39,564 [brain] Parse failure 1/3: {"total": 76, "results": [{"id": 0, "type": "menu", "items": [{"label": "New Tab", "action": "44"}, {"label": "New Window", "action": "48"}, {"label": "Close Tab", "action": "50"}, {"label": "Close Wi
+2026-06-04 14:09:39,564 [brain] ReAct step 4/10
+2026-06-04 14:10:04,039 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:10:04,040 [brain] Raw output: {"thought": "your reasoning", "tool": "fetch_memory", "args": {"keys": ["system_prompt"]}}
+2026-06-04 14:10:04,040 [brain] Thought: your reasoning
+2026-06-04 14:10:04,040 [brain] Dispatching → fetch_memory({'keys': ['system_prompt']})
+2026-06-04 14:10:04,040 [memory_agent] No match found for key 'system_prompt' (stored: ['last_interaction'])
+2026-06-04 14:10:04,040 [brain] Result: {}
+2026-06-04 14:10:04,040 [brain] ReAct step 5/10
+2026-06-04 14:10:28,804 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:10:28,805 [brain] Raw output: {"thought": "your reasoning", "tool": "done", "args": {"speech": "No information about location found in memory."}}
+2026-06-04 14:10:28,805 [brain] Thought: your reasoning
+2026-06-04 14:10:28,805 [brain] ReAct done. Speech: No information about location found in memory.
+2026-06-04 14:10:28,806 [memory_agent] Memory updated: last_interaction
+2026-06-04 14:10:28,806 [state_machine] State: THINKING → IDLE
+2026-06-04 14:34:15,782 [state_machine] State: IDLE → THINKING
+2026-06-04 14:34:15,803 [brain] Unified call for: hi
+2026-06-04 14:34:41,231 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 14:34:41,232 [brain] Unified raw: Hello there! How can I assist you today?
+2026-06-04 14:34:41,232 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-04 14:34:41,233 [memory_agent] Memory updated: last_interaction
+2026-06-04 14:34:41,233 [state_machine] State: THINKING → IDLE

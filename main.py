@@ -67,9 +67,20 @@ async def main():
     from agents.web_agent import register as reg_web
     reg_web()
 
+    from agents.hands_agent import register as reg_hands
+    reg_hands()
+
+    from agents.eyes_agent import register as reg_eyes
+    reg_eyes()
+
     # ── Wire brain ───────────────────────────────────────────────────────────
     from core.brain import brain
     brain.inject_memory_agent(memory)
+
+    # ── Start kernel listener (background task) ───────────────────────────────
+    from kernel.kernel_listener import start as start_kernel
+    kernel_task = asyncio.create_task(start_kernel(brain))
+    log.info("Kernel listener started ✓")
 
     # ── Print banner ─────────────────────────────────────────────────────────
     backend = os.environ.get("LLM_BACKEND", "groq")
@@ -83,28 +94,37 @@ async def main():
     print()
 
     # ── REPL ─────────────────────────────────────────────────────────────────
-    while True:
+    try:
+        while True:
+            try:
+                user_input = input("You: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\n[Meeseeks] Goodbye.")
+                break
+
+            if not user_input:
+                continue
+
+            if user_input.lower() in {"exit", "quit", "bye"}:
+                print("[Meeseeks] Goodbye.")
+                break
+
+            print("[Meeseeks] Thinking...", flush=True)
+
+            try:
+                response = await brain.process(user_input)
+                print(f"\n[Meeseeks] {response}\n")
+            except Exception as e:
+                log.exception(f"Brain.process raised: {e}")
+                print(f"\n[Meeseeks] Internal error: {e}\n")
+    finally:
+        # Clean shutdown — cancel background task
+        kernel_task.cancel()
         try:
-            user_input = input("You: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\n[Meeseeks] Goodbye.")
-            break
-
-        if not user_input:
-            continue
-
-        if user_input.lower() in {"exit", "quit", "bye"}:
-            print("[Meeseeks] Goodbye.")
-            break
-
-        print("[Meeseeks] Thinking...", flush=True)
-
-        try:
-            response = await brain.process(user_input)
-            print(f"\n[Meeseeks] {response}\n")
-        except Exception as e:
-            log.exception(f"Brain.process raised: {e}")
-            print(f"\n[Meeseeks] Internal error: {e}\n")
+            await kernel_task
+        except asyncio.CancelledError:
+            pass
+        log.info("Kernel listener stopped.")
 
 
 if __name__ == "__main__":

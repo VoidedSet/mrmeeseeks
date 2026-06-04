@@ -9,8 +9,15 @@ from typing import Any
 TOOL_SCHEMAS = {
     # ── Eyes ──
     "get_ui_elements": {
-        "description": "Read all visible UI elements on screen. Returns list with name, role, x, y, id.",
-        "args": {}
+        "description": (
+            "Read visible UI elements on screen. Filter with optional args to avoid getting everything at once. "
+            "app: filter to one application. "
+            "region: {x1,y1,x2,y2} bounding box to get elements in a screen area (e.g. top bar = {x1:0,y1:0,x2:1920,y2:50})."
+        ),
+        "args": {
+            "app":    "string (optional) — filter to a specific app e.g. 'Firefox', 'Visual Studio Code'",
+            "region": "object (optional) — {x1: int, y1: int, x2: int, y2: int} screen region bounding box",
+        }
     },
     "read_element_text": {
         "description": "Read text from a specific UI element by id.",

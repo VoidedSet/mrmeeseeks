@@ -55,8 +55,10 @@ def build_unified_prompt(context: dict) -> str:
     Full schemas injected only when entering ReAct loop.
     The model decides: plain text reply = conversational, JSON tool call = agentic.
     """
-    available  = bus.registered_tools()
-    memory_str = json.dumps(context.get("memory", {}), indent=2)
+    available    = bus.registered_tools()
+    memory_str   = json.dumps(context.get("memory", {}), indent=2)
+    open_windows = context.get("open_windows", [])
+    windows_str  = "\n".join(f"  - {w}" for w in open_windows) if open_windows else "  (none detected)"
 
     return (
         "You are Mr Meeseeks — a local AI OS companion running on Ubuntu.\n"
@@ -72,15 +74,27 @@ def build_unified_prompt(context: dict) -> str:
         "2. JSON TOOL CALL — for tasks needing system access, commands, or memory.\n"
         "   Output ONLY this JSON — NO text before or after it:\n"
         '   {"thought": "...", "tool": "tool_name", "args": {...}}\n'
-        "   Examples: open netflix, check battery, list open windows, remember my name\n"
+        "   Examples: open netflix, check battery, take a screenshot, click a button\n"
         "\n"
         "CRITICAL for mode 2: output ONLY the JSON. Zero intro text. Zero explanation.\n"
         "\n"
+        "=== WHAT'S ALREADY KNOWN (NO TOOL CALL NEEDED) ===\n"
+        "The following is live OS state — use it directly without calling any tool:\n"
+        f"  active_window : {context.get('active_window', 'unknown')}\n"
+        f"  battery       : {context.get('battery', {})}\n"
+        f"  time          : {context.get('time', '')}\n"
+        f"  open_windows  :\n{windows_str}\n"
+        "\n"
+        "If the user asks 'what apps are open?', 'list open windows', 'what is my battery?', etc.\n"
+        "→ Answer directly from the above. Do NOT call list_open_windows or check_battery.\n"
+        "\n"
         "=== TOOL RULES ===\n"
-        "run_bg_cmd           — use for ALL read operations: head, cat, grep, ls, find, ps, df\n"
-        "                       Reading a file: {\"tool\": \"run_bg_cmd\", \"args\": {\"cmd\": \"head -n 20 /path/to/file\"}}\n"
-        "open_visible_terminal — use ONLY for commands that MODIFY the system or launch apps\n"
-        "                       Opening URLs: {\"tool\": \"open_visible_terminal\", \"args\": {\"cmd\": \"xdg-open https://youtube.com\"}}\n"
+        "run_bg_cmd           — ALL read operations: head, cat, grep, ls, find, ps, df, wmctrl\n"
+        '                       Read file: {"tool": "run_bg_cmd", "args": {"cmd": "head -n 20 /path/to/file"}}\n'
+        "open_visible_terminal — ONLY for commands that MODIFY or LAUNCH: install, xdg-open, scripts\n"
+        "get_ui_elements      — see screen elements. Use app= or region= to avoid dumping everything.\n"
+        '                       Firefox only: {"tool": "get_ui_elements", "args": {"app": "Firefox"}}\n'
+        '                       Top bar:      {"tool": "get_ui_elements", "args": {"region": {"x1":0,"y1":0,"x2":1920,"y2":50}}}\n'
         "\n"
         f"=== AVAILABLE TOOLS ===\n{available}\n"
         "\n"
@@ -90,9 +104,6 @@ def build_unified_prompt(context: dict) -> str:
         '  - Save:   {"tool": "update_memory", "args": {"key": "name", "data": "kshayik"}}\n'
         "\n"
         "=== CURRENT CONTEXT ===\n"
-        f"time          : {context.get('time', datetime.now().strftime('%H:%M'))}\n"
-        f"battery       : {context.get('battery', 'unknown')}\n"
-        f"active_window : {context.get('active_window', 'unknown')}\n"
         f"working_dir   : {context.get('cwd', 'unknown')}\n"
         f"logs_dir      : {context.get('logs_dir', 'unknown')}\n"
         "\n"
@@ -120,19 +131,27 @@ def build_system_prompt(context: dict) -> str:
         "5. Never emit destructive commands in run_bg_cmd.\n"
         "6. If a tool returns an error, try a DIFFERENT approach.\n"
         "7. If you cannot complete a task, emit done and explain honestly.\n"
+        "8. When a tool returns data, DESCRIBE IT in your done speech — do NOT ignore it.\n"
         "\n"
         "=== TOOL USAGE RULES ===\n"
         "run_bg_cmd:\n"
-        "  USE for ALL read-only operations: head, cat, grep, ls, find, ps, df, free, wmctrl, etc.\n"
-        '  Reading files: {"tool": "run_bg_cmd", "args": {"cmd": "head -n 20 /path/to/file"}}\n'
-        '  Listing windows: {"tool": "run_bg_cmd", "args": {"cmd": "wmctrl -l"}}\n'
+        "  USE for ALL read-only ops: head, cat, grep, ls, find, ps, df, free, wmctrl, etc.\n"
+        '  Read file: {"tool": "run_bg_cmd", "args": {"cmd": "head -n 20 /path/to/file"}}\n'
         "  DO NOT use for write/install/execute operations.\n"
         "\n"
         "open_visible_terminal:\n"
         "  USE ONLY for commands that modify the system or launch GUI apps.\n"
-        '  Opening URLs: {"tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://youtube.com"}}\n'
-        "  DO NOT use for reading files or read-only commands.\n"
+        '  Open URL: {"tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://..."}}\n'
+        "  DO NOT use for read-only commands.\n"
         "  DO NOT invent commands that don't exist (e.g. xdg-query does not exist).\n"
+        "\n"
+        "list_open_windows:\n"
+        "  USE THIS (not get_active_window) when user asks for ALL windows.\n"
+        '  {"tool": "list_open_windows", "args": {}}\n'
+        "\n"
+        "get_ui_elements:\n"
+        "  Returns AT-SPI accessibility tree. Large output — summarize key items in done speech.\n"
+        "  Only return element names/roles that are relevant to user's question.\n"
         "\n"
         "=== WHEN NOT TO USE TOOLS ===\n"
         "Answer from context/history WITHOUT tools for:\n"
@@ -150,7 +169,7 @@ def build_system_prompt(context: dict) -> str:
         "run_bg_cmd           -> args.cmd    (string)\n"
         "open_visible_terminal -> args.cmd   (string)\n"
         "update_memory        -> args.key, args.data\n"
-        "fetch_memory         -> args.keys   (LIST of strings)\n"
+        "fetch_memory         -> args.keys   (LIST of strings, NOT a single string)\n"
         "done                 -> args.speech (string)\n"
         "\n"
         f"=== REGISTERED TOOLS ===\n{available}\n"
@@ -170,21 +189,21 @@ def build_system_prompt(context: dict) -> str:
         + "\n\n"
         "=== EXAMPLES ===\n"
         'User: "list all open windows"\n'
-        '-> {"thought": "wmctrl lists all windows.", "tool": "run_bg_cmd", "args": {"cmd": "wmctrl -l"}}\n'
+        '-> {"thought": "Use list_open_windows for all windows.", "tool": "list_open_windows", "args": {}}\n'
+        '   (gets result) -> {"thought": "Got window list.", "tool": "done", "args": {"speech": "Open windows: Firefox, VS Code, Terminal."}}\n'
         "\n"
         'User: "read first 10 lines of /home/user/file.txt"\n'
         '-> {"thought": "head is read-only, use run_bg_cmd.", "tool": "run_bg_cmd", "args": {"cmd": "head -n 10 /home/user/file.txt"}}\n'
+        '   (gets output) -> {"thought": "Got file contents.", "tool": "done", "args": {"speech": "The file starts with: ..."}}\n'
         "\n"
         'User: "open youtube"\n'
-        '-> {"thought": "xdg-open launches browser, use open_visible_terminal.", "tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://youtube.com"}}\n'
+        '-> {"thought": "xdg-open launches browser.", "tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://youtube.com"}}\n'
         "\n"
         'User: "what is my city?"\n'
-        '-> {"thought": "Not sure of exact key, list memory keys first.", "tool": "list_memory_keys", "args": {}}\n'
+        '-> {"thought": "Not sure of key, list memory keys first.", "tool": "list_memory_keys", "args": {}}\n'
         '   (sees {"keys": ["city_name", "name"]})\n'
         '-> {"thought": "Key is city_name.", "tool": "fetch_memory", "args": {"keys": ["city_name"]}}\n'
-        "\n"
-        'User: "what did I ask before?"\n'
-        '-> {"thought": "Conversation history is in my context.", "tool": "done", "args": {"speech": "You asked about X and Y."}}\n'
+        '   (gets result) -> {"thought": "Got city.", "tool": "done", "args": {"speech": "Your city is Mumbai."}}\n'
     )
 
 
@@ -388,10 +407,12 @@ async def react_loop(
     If first_tool_call is provided (from unified_first_call), it is used as
     step 1's output — no extra LLM call wasted.
 
-    Protections:
+    Loop protections:
     - MAX_REACT_STEPS hard limit
     - MAX_PARSE_FAIL abort on repeated parse failures
-    - Repeated action detection: same (tool, args) twice → force wrap-up
+    - Repeated action detection: counter-based
+        count==2: warn model, don't dispatch
+        count>=3: set force_done flag, exit cleanly next iteration
     """
     provider = llm_mod.provider
     if provider is None:
@@ -408,8 +429,9 @@ async def react_loop(
     parse_failures = 0
     MAX_PARSE_FAIL = 3
 
-    # Repeated action detection: track (tool_name, serialized_args) pairs
-    seen_actions: set[str] = set()
+    # action_key -> number of times dispatched
+    seen_actions: dict[str, int] = {}
+    force_done = False  # hard abort: exits loop cleanly without extra LLM call
 
     # ── Optionally inject the pre-parsed first tool call ─────────────────────
     if first_tool_call is not None:
@@ -439,25 +461,34 @@ async def react_loop(
             return speech
         else:
             action_key = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}"
-            seen_actions.add(action_key)
+            seen_actions[action_key] = 1
 
             log.info(f"Dispatching → {tool_name}({tool_args})")
             result = await bus.dispatch(tool_name, tool_args)
             log.info(f"Result: {str(result)[:300]}")
 
-            observations.append(f"{tool_name} -> {json.dumps(result)}")
+            result_str = json.dumps(result)
+            observations.append(
+                f"[Result from {tool_name}]: {result_str}\n"
+                "Use this result to answer the user. Do NOT ignore it."
+            )
             history.add("assistant", json.dumps(first_tool_call))
-            history.add("user", f"[Tool result]: {json.dumps(result)}")
+            history.add("user", f"[Tool result from {tool_name}]: {result_str}")
 
     # ── Main ReAct loop ───────────────────────────────────────────────────────
     while steps < MAX_REACT_STEPS:
         steps += 1
         log.info(f"ReAct step {steps}/{MAX_REACT_STEPS}")
 
+        # Hard abort: repeated action fired 3x — skip LLM call, return immediately
+        if force_done:
+            log.warning("Force-done: aborting after repeated action")
+            return "I got stuck repeating the same action and couldn't finish. Please try rephrasing."
+
         messages = history.messages.copy()
         if observations:
             obs_text = "\n".join(
-                f"[Tool result {i+1}]: {o}" for i, o in enumerate(observations)
+                f"[Observation {i+1}]: {o}" for i, o in enumerate(observations)
             )
             messages.append({"role": "user", "content": obs_text})
 
@@ -518,26 +549,36 @@ async def react_loop(
 
         # ── Repeated action detection ─────────────────────────────────────────
         action_key = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}"
-        if action_key in seen_actions:
-            log.warning(f"Repeated action detected: {action_key}")
+        count = seen_actions.get(action_key, 0) + 1
+        seen_actions[action_key] = count
+
+        if count == 2:
+            # First repeat — warn and don't dispatch
+            log.warning(f"Repeated action (2nd time): {action_key}")
             observations.append(
-                f"LOOP DETECTED: You already tried '{tool_name}' with these exact args "
-                f"and got the same result. Do NOT repeat it again. "
-                f"Either try a completely different approach, or emit 'done' and "
-                f"honestly tell the user what you cannot do with the tools available."
+                f"LOOP WARNING: You already called '{tool_name}' with these exact args "
+                "and got a result. Repeating it will give the SAME output. "
+                "Try a DIFFERENT tool/approach, or emit 'done' and tell the user what you found."
             )
-            steps = MAX_REACT_STEPS - 2  # leave 2 steps to wrap up
             continue
-        seen_actions.add(action_key)
+        elif count >= 3:
+            # Second repeat — hard abort, will exit on next while iteration
+            log.error(f"Repeated action {count}x — hard abort: {action_key}")
+            force_done = True
+            continue
 
         # ── Dispatch ──────────────────────────────────────────────────────────
         log.info(f"Dispatching → {tool_name}({tool_args})")
         result = await bus.dispatch(tool_name, tool_args)
         log.info(f"Result: {str(result)[:300]}")
 
-        observations.append(f"{tool_name} -> {json.dumps(result)}")
+        result_str = json.dumps(result)
+        observations.append(
+            f"[Result from {tool_name}]: {result_str}\n"
+            "Describe/use this result in your done speech. Do NOT confabulate or ignore it."
+        )
         history.add("assistant", raw_output)
-        history.add("user", f"[Tool result]: {json.dumps(result)}")
+        history.add("user", f"[Tool result from {tool_name}]: {result_str}")
 
     log.warning("Hit MAX_REACT_STEPS — forcing done")
     return "I ran out of steps. The task may require tools I don't have yet."
@@ -545,13 +586,36 @@ async def react_loop(
 
 # ── Context Builder ───────────────────────────────────────────────────────────
 async def build_context(memory_agent, kernel_events: list) -> dict:
-    """Pull OS context + memory to inject into system prompt."""
-    try:
-        active_window = await bus.dispatch("get_active_window", {})
-        battery       = await bus.dispatch("check_battery", {})
-    except Exception:
-        active_window = "unknown"
-        battery       = "unknown"
+    """
+    Pull OS context + memory to inject into system prompt.
+
+    Active window, all windows, and battery are read from KernelState (zero latency,
+    updated by the background KernelListener). Falls back to tool dispatch if the
+    listener hasn't warmed up yet (first few ms after startup).
+    """
+    from kernel.kernel_state import state as kstate
+
+    snap = kstate.get_snapshot()
+
+    # Active window — from KernelState (no subprocess needed)
+    active_window = snap["active_window"]
+
+    # Battery — from KernelState
+    battery = snap["battery"]
+
+    # Fall back to dispatching if KernelState is empty (listener not started yet)
+    if active_window == "unknown" and not kstate.is_fresh("active_window", max_age_seconds=2.0):
+        try:
+            result = await bus.dispatch("get_active_window", {})
+            active_window = result.get("window", "unknown")
+        except Exception:
+            pass
+
+    if battery.get("level") == "unknown" and not kstate.is_fresh("battery", max_age_seconds=5.0):
+        try:
+            battery = await bus.dispatch("check_battery", {})
+        except Exception:
+            pass
 
     keywords = extract_keywords_from_events(kernel_events)
 
@@ -563,6 +627,7 @@ async def build_context(memory_agent, kernel_events: list) -> dict:
 
     return {
         "active_window": active_window,
+        "open_windows":  snap["open_windows"],
         "battery":       battery,
         "time":          datetime.now().strftime("%H:%M"),
         "recent_events": kernel_events[-10:],

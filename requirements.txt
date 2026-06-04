@@ -8,8 +8,8 @@ python-dotenv>=1.0.0   # .env loading
 pydantic>=2.0.0        # tool schema validation (future — currently pure Python)
 
 # ── Phase 2 — Eyes + Hands (install when building those agents) ───────────────
-# pyautogui             # mouse/keyboard control
-# pyatspi               # AT-SPI2 accessibility DOM (also needs: sudo apt install at-spi2-core python3-atspi)
+pyautogui             # mouse/keyboard control
+# pyatspi             # AT-SPI2 accessibility DOM (better to install via apt: sudo apt install python3-pyatspi)
 
 # ── Phase 3 — Voice (install when building buddy_agent) ──────────────────────
 # faster-whisper        # local STT
