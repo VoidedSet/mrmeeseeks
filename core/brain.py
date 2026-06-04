@@ -92,9 +92,15 @@ def build_unified_prompt(context: dict) -> str:
         "run_bg_cmd           — ALL read operations: head, cat, grep, ls, find, ps, df, wmctrl\n"
         '                       Read file: {"tool": "run_bg_cmd", "args": {"cmd": "head -n 20 /path/to/file"}}\n'
         "open_visible_terminal — ONLY for commands that MODIFY or LAUNCH: install, xdg-open, scripts\n"
-        "get_ui_elements      — see screen elements. Use app= or region= to avoid dumping everything.\n"
-        '                       Firefox only: {"tool": "get_ui_elements", "args": {"app": "Firefox"}}\n'
-        '                       Top bar:      {"tool": "get_ui_elements", "args": {"region": {"x1":0,"y1":0,"x2":1920,"y2":50}}}\n'
+        "get_ui_elements      — see screen elements. PROCESS names: VS Code='code', Firefox='firefox'.\n"
+        "                       CRITICAL: app= takes the PROCESS name, NOT the window title.\n"
+        "                       VS Code  → app='code'  |  Firefox → app='firefox'  |  Terminal → app='gnome-terminal-server'\n"
+        "                       If unsure: call list_at_spi_apps first to see all registered process names.\n"
+        '                       VS Code: {"tool": "get_ui_elements", "args": {"app": "code"}}\n'
+        '                       Firefox top bar: {"tool": "get_ui_elements", "args": {"app": "firefox", "region": {"x1":0,"y1":0,"x2":1920,"y2":80}}}\n'
+        "\n"
+        "list_at_spi_apps     — USE THIS when unsure of process name for get_ui_elements.\n"
+        '                       {"tool": "list_at_spi_apps", "args": {}}\n'
         "\n"
         f"=== AVAILABLE TOOLS ===\n{available}\n"
         "\n"

@@ -1,0 +1,1320 @@
+kshayik@kshayiks-hp-victus:~/Projects/mr-meeseeks$ python3 test-list-ui.py 
+--- Crawling code UI Tree (Root Children: 1) ---
+• [APPLICATION] Name: code
+    └─ Action 0: doDefault
+    └─ Action 1: showContextMenu
+  • [FRAME] Name: mr-meeseeks - Visual Studio Code
+      └─ Action 0: doDefault
+      └─ Action 1: showContextMenu
+    • [PANEL] Name: [Unnamed]
+        └─ Action 0: doDefault
+        └─ Action 1: showContextMenu
+      • [PANEL] Name: [Unnamed]
+          └─ Action 0: doDefault
+          └─ Action 1: showContextMenu
+        • [PANEL] Name: [Unnamed]
+            └─ Action 0: doDefault
+            └─ Action 1: showContextMenu
+        • [PUSH BUTTON] Name: Minimize
+            └─ Action 0: press
+            └─ Action 1: showContextMenu
+        • [PUSH BUTTON] Name: Maximize
+            └─ Action 0: click
+            └─ Action 1: showContextMenu
+        • [PUSH BUTTON] Name: Restore
+            └─ Action 0: press
+            └─ Action 1: showContextMenu
+        • [PUSH BUTTON] Name: Close
+            └─ Action 0: press
+            └─ Action 1: showContextMenu
+        • [PANEL] Name: [Unnamed]
+            └─ Action 0: doDefault
+            └─ Action 1: showContextMenu
+          • [PANEL] Name: [Unnamed]
+              └─ Action 0: doDefault
+              └─ Action 1: showContextMenu
+            • [PANEL] Name: [Unnamed]
+                └─ Action 0: doDefault
+                └─ Action 1: showContextMenu
+              • [PANEL] Name: [Unnamed]
+                  └─ Action 0: doDefault
+                  └─ Action 1: showContextMenu
+                • [PANEL] Name: [Unnamed]
+                    └─ Action 0: doDefault
+                    └─ Action 1: showContextMenu
+                  • [PANEL] Name: [Unnamed]
+                      └─ Action 0: doDefault
+                      └─ Action 1: showContextMenu
+                • [DOCUMENT WEB] Name: mr-meeseeks - Visual Studio Code
+                    └─ Action 0: doDefault
+                    └─ Action 1: showContextMenu
+                  • [SECTION] Name: [Unnamed]
+                      └─ Action 0: click
+                      └─ Action 1: showContextMenu
+                    • [EMBEDDED] Name: [Unnamed]
+                        └─ Action 0: click
+                        └─ Action 1: showContextMenu
+                      • [SECTION] Name: [Unnamed]
+                          └─ Action 0: clickAncestor
+                          └─ Action 1: showContextMenu
+                        • [SECTION] Name: [Unnamed]
+                            └─ Action 0: clickAncestor
+                            └─ Action 1: showContextMenu
+                          • [SECTION] Name: [Unnamed]
+                              └─ Action 0: clickAncestor
+                              └─ Action 1: showContextMenu
+                            • [SECTION] Name: [Unnamed]
+                                └─ Action 0: click
+                                └─ Action 1: showContextMenu
+                            • [SECTION] Name: [Unnamed]
+                                └─ Action 0: click
+                                └─ Action 1: showContextMenu
+                            • [SECTION] Name: [Unnamed]
+                                └─ Action 0: click
+                                └─ Action 1: showContextMenu
+                          • [SECTION] Name: [Unnamed]
+                              └─ Action 0: clickAncestor
+                              └─ Action 1: showContextMenu
+                            • [SECTION] Name: [Unnamed]
+                                └─ Action 0: clickAncestor
+                                └─ Action 1: showContextMenu
+                              • [SECTION] Name: [Unnamed]
+                                  └─ Action 0: clickAncestor
+                                  └─ Action 1: showContextMenu
+                              • [SECTION] Name: [Unnamed]
+                                  └─ Action 0: clickAncestor
+                                  └─ Action 1: showContextMenu
+                              • [MENU BAR] Name: [Unnamed]
+                                  └─ Action 0: clickAncestor
+                                  └─ Action 1: showContextMenu
+                                • [MENU ITEM] Name: File
+                                    └─ Action 0: select
+                                    └─ Action 1: showContextMenu
+                                • [MENU ITEM] Name: Edit
+                                    └─ Action 0: select
+                                    └─ Action 1: showContextMenu
+                                • [MENU ITEM] Name: Selection
+                                    └─ Action 0: select
+                                    └─ Action 1: showContextMenu
+                                • [MENU ITEM] Name: View
+                                    └─ Action 0: select
+                                    └─ Action 1: showContextMenu
+                                • [MENU ITEM] Name: Go
+                                    └─ Action 0: select
+                                    └─ Action 1: showContextMenu
+                                • [MENU ITEM] Name: Run
+                                    └─ Action 0: select
+                                    └─ Action 1: showContextMenu
+                                • [MENU ITEM] Name: Terminal
+                                    └─ Action 0: select
+                                    └─ Action 1: showContextMenu
+                                • [MENU ITEM] Name: Help
+                                    └─ Action 0: select
+                                    └─ Action 1: showContextMenu
+                              • [TOOL BAR] Name: [Unnamed]
+                                  └─ Action 0: clickAncestor
+                                  └─ Action 1: showContextMenu
+                                • [PUSH BUTTON] Name: Go Back (Ctrl+Alt+-)
+                                    └─ Action 0: press
+                                    └─ Action 1: showContextMenu
+                                  • [SECTION] Name: [Unnamed]
+                                      └─ Action 0: clickAncestor
+                                      └─ Action 1: showContextMenu
+                                    • [STATIC] Name: 
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                • [PUSH BUTTON] Name: Go Forward (Ctrl+Shift+-)
+                                    └─ Action 0: press
+                                    └─ Action 1: showContextMenu
+                                  • [SECTION] Name: [Unnamed]
+                                      └─ Action 0: clickAncestor
+                                      └─ Action 1: showContextMenu
+                                    • [STATIC] Name: 
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                • [TOOL BAR] Name: Agent Status
+                                    └─ Action 0: click
+                                    └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: Open Quick Access
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name:  1
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                    • [SECTION] Name: [Unnamed]
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                      • [STATIC] Name: 
+                                          └─ Action 0: clickAncestor
+                                          └─ Action 1: showContextMenu
+                                    • [STATIC] Name: 1
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                  • [SECTION] Name: [Unnamed]
+                                      └─ Action 0: click
+                                      └─ Action 1: showContextMenu
+                                    • [PUSH BUTTON] Name: Toggle Chat
+                                        └─ Action 0: click
+                                        └─ Action 1: showContextMenu
+                                      • [PUSH BUTTON] Name: Toggle Chat
+                                          └─ Action 0: click
+                                          └─ Action 1: showContextMenu
+                                        • [SECTION] Name: [Unnamed]
+                                            └─ Action 0: clickAncestor
+                                            └─ Action 1: showContextMenu
+                                          • [STATIC] Name: 
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                    • [SECTION] Name: [Unnamed]
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                      • [SECTION] Name: [Unnamed]
+                                          └─ Action 0: click
+                                          └─ Action 1: showContextMenu
+                                        • [SECTION] Name: [Unnamed]
+                                            └─ Action 0: click
+                                            └─ Action 1: showContextMenu
+                                          • [PUSH BUTTON] Name: More Actions
+                                              └─ Action 0: open
+                                              └─ Action 1: showContextMenu
+                              • [SECTION] Name: [Unnamed]
+                                  └─ Action 0: clickAncestor
+                                  └─ Action 1: showContextMenu
+                                • [TOOL BAR] Name: Title actions
+                                    └─ Action 0: clickAncestor
+                                    └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: Open in Agents Window
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: Customize Layout...
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                    • [SECTION] Name: [Unnamed]
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                      • [STATIC] Name: 
+                                          └─ Action 0: clickAncestor
+                                          └─ Action 1: showContextMenu
+                                  • [TOGGLE BUTTON] Name: Toggle Primary Side Bar (Ctrl+B)
+                                      └─ Action 0: check
+                                      └─ Action 1: showContextMenu
+                                    • [SECTION] Name: [Unnamed]
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                      • [STATIC] Name: 
+                                          └─ Action 0: clickAncestor
+                                          └─ Action 1: showContextMenu
+                                  • [TOGGLE BUTTON] Name: Toggle Panel (Ctrl+J)
+                                      └─ Action 0: uncheck
+                                      └─ Action 1: showContextMenu
+                                    • [SECTION] Name: [Unnamed]
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                      • [STATIC] Name: 
+                                          └─ Action 0: clickAncestor
+                                          └─ Action 1: showContextMenu
+                                  • [TOGGLE BUTTON] Name: Toggle Secondary Side Bar (Ctrl+Alt+B)
+                                      └─ Action 0: check
+                                      └─ Action 1: showContextMenu
+                                    • [SECTION] Name: [Unnamed]
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                      • [STATIC] Name: 
+                                          └─ Action 0: clickAncestor
+                                          └─ Action 1: showContextMenu
+                            • [SECTION] Name: [Unnamed]
+                                └─ Action 0: clickAncestor
+                                └─ Action 1: showContextMenu
+                              • [SECTION] Name: [Unnamed]
+                                  └─ Action 0: clickAncestor
+                                  └─ Action 1: showContextMenu
+                                • [SECTION] Name: [Unnamed]
+                                    └─ Action 0: clickAncestor
+                                    └─ Action 1: showContextMenu
+                                  • [SECTION] Name: [Unnamed]
+                                      └─ Action 0: click
+                                      └─ Action 1: showContextMenu
+                                  • [SECTION] Name: [Unnamed]
+                                      └─ Action 0: click
+                                      └─ Action 1: showContextMenu
+                                  • [SECTION] Name: [Unnamed]
+                                      └─ Action 0: click
+                                      └─ Action 1: showContextMenu
+                                • [SECTION] Name: [Unnamed]
+                                    └─ Action 0: clickAncestor
+                                    └─ Action 1: showContextMenu
+                                  • [SECTION] Name: [Unnamed]
+                                      └─ Action 0: clickAncestor
+                                      └─ Action 1: showContextMenu
+                                    • [SECTION] Name: [Unnamed]
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                      • [PAGE TAB LIST] Name: Active View Switcher
+                                          └─ Action 0: clickAncestor
+                                          └─ Action 1: showContextMenu
+                                        • [PAGE TAB] Name: Explorer (Ctrl+Shift+E)
+                                            └─ Action 0: click
+                                            └─ Action 1: showContextMenu
+                                          • [SECTION] Name: Explorer (Ctrl+Shift+E)
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [STATIC] Name: 
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                        • [PAGE TAB] Name: Search (Ctrl+Shift+F)
+                                            └─ Action 0: click
+                                            └─ Action 1: showContextMenu
+                                          • [SECTION] Name: Search (Ctrl+Shift+F)
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [STATIC] Name: 
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                        • [PAGE TAB] Name: Source Control (Ctrl+Shift+G) - 5 pending changes
+                                            └─ Action 0: click
+                                            └─ Action 1: showContextMenu
+                                          • [SECTION] Name: Source Control (Ctrl+Shift+G) - 5 pending changes
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [STATIC] Name: 
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [SECTION] Name: Source Control (Ctrl+Shift+G) - 5 pending changes
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [STATIC] Name: 5
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                        • [PAGE TAB] Name: Run and Debug (Ctrl+Shift+D)
+                                            └─ Action 0: click
+                                            └─ Action 1: showContextMenu
+                                          • [SECTION] Name: Run and Debug (Ctrl+Shift+D)
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [STATIC] Name: 
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                        • [PAGE TAB] Name: Extensions (Ctrl+Shift+X)
+                                            └─ Action 0: click
+                                            └─ Action 1: showContextMenu
+                                          • [SECTION] Name: Extensions (Ctrl+Shift+X)
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [STATIC] Name: 
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                        • [PAGE TAB] Name: Testing
+                                            └─ Action 0: click
+                                            └─ Action 1: showContextMenu
+                                          • [SECTION] Name: Testing
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [STATIC] Name: 
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                    • [SECTION] Name: [Unnamed]
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                      • [TOOL BAR] Name: Manage
+                                          └─ Action 0: clickAncestor
+                                          └─ Action 1: showContextMenu
+                                        • [PUSH BUTTON] Name: Accounts
+                                            └─ Action 0: open
+                                            └─ Action 1: showContextMenu
+                                          • [SECTION] Name: Accounts
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [STATIC] Name: 
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                        • [PUSH BUTTON] Name: Manage
+                                            └─ Action 0: open
+                                            └─ Action 1: showContextMenu
+                                          • [SECTION] Name: Manage
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [STATIC] Name: 
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                  • [SECTION] Name: [Unnamed]
+                                      └─ Action 0: clickAncestor
+                                      └─ Action 1: showContextMenu
+                                    • [SECTION] Name: [Unnamed]
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                      • [SECTION] Name: [Unnamed]
+                                          └─ Action 0: clickAncestor
+                                          └─ Action 1: showContextMenu
+                                        • [SECTION] Name: [Unnamed]
+                                            └─ Action 0: click
+                                            └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                      • [SECTION] Name: [Unnamed]
+                                          └─ Action 0: clickAncestor
+                                          └─ Action 1: showContextMenu
+                                        • [SECTION] Name: [Unnamed]
+                                            └─ Action 0: clickAncestor
+                                            └─ Action 1: showContextMenu
+                                          • [PAGE TAB LIST] Name: Active View Switcher
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [PAGE TAB] Name: Problems (Ctrl+Shift+M)
+                                                └─ Action 0: click
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: Problems (Ctrl+Shift+M)
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [STATIC] Name: PROBLEMS
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                            • [PAGE TAB] Name: Output (Ctrl+K Ctrl+H)
+                                                └─ Action 0: click
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: Output (Ctrl+K Ctrl+H)
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [STATIC] Name: OUTPUT
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                            • [PAGE TAB] Name: Debug Console (Ctrl+Shift+Y)
+                                                └─ Action 0: click
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: Debug Console (Ctrl+Shift+Y)
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [STATIC] Name: DEBUG CONSOLE
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                            • [PAGE TAB] Name: Terminal (Ctrl+`)
+                                                └─ Action 0: click
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: Terminal (Ctrl+`)
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [STATIC] Name: TERMINAL
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                            • [PAGE TAB] Name: Ports
+                                                └─ Action 0: click
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: Ports
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [STATIC] Name: PORTS
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                          • [TOOL BAR] Name: Terminal actions
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [PUSH BUTTON] Name: Focus Terminal (Ctrl+DownArrow) [Alt] Split Terminal (Ctrl+Shift+5)
+                                                └─ Action 0: press
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [STATIC] Name: 
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                              • [STATIC] Name: bash
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [STATIC] Name: 
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                            • [PUSH BUTTON] Name: New Terminal (Ctrl+Shift+`) [Alt] Split Terminal (Ctrl+Shift+5)
+                                                └─ Action 0: press
+                                                └─ Action 1: showContextMenu
+                                              • [PUSH BUTTON] Name: New Terminal (Ctrl+Shift+`) [Alt] Split Terminal (Ctrl+Shift+5)
+                                                  └─ Action 0: click
+                                                  └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: click
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: click
+                                                  └─ Action 1: showContextMenu
+                                                • [PUSH BUTTON] Name: Launch Profile...
+                                                    └─ Action 0: open
+                                                    └─ Action 1: showContextMenu
+                                            • [PUSH BUTTON] Name: Split Terminal (Ctrl+Shift+5)
+                                                └─ Action 0: press
+                                                └─ Action 1: showContextMenu
+                                            • [PUSH BUTTON] Name: Kill Terminal
+                                                └─ Action 0: press
+                                                └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: click
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: click
+                                                  └─ Action 1: showContextMenu
+                                                • [PUSH BUTTON] Name: Views and More Actions...
+                                                    └─ Action 0: open
+                                                    └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                          • [TOOL BAR] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [TOGGLE BUTTON] Name: Restore Panel
+                                                └─ Action 0: uncheck
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [STATIC] Name: 
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                            • [PUSH BUTTON] Name: Hide Panel (Ctrl+J)
+                                                └─ Action 0: press
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [STATIC] Name: 
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                          • [SECTION] Name: [Unnamed]
+                                              └─ Action 0: clickAncestor
+                                              └─ Action 1: showContextMenu
+                                            • [SECTION] Name: [Unnamed]
+                                                └─ Action 0: clickAncestor
+                                                └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                              • [SECTION] Name: [Unnamed]
+                                                  └─ Action 0: clickAncestor
+                                                  └─ Action 1: showContextMenu
+                                                • [SECTION] Name: [Unnamed]
+                                                    └─ Action 0: clickAncestor
+                                                    └─ Action 1: showContextMenu
+                                                  • [SECTION] Name: [Unnamed]
+                                                      └─ Action 0: clickAncestor
+                                                      └─ Action 1: showContextMenu
+                                                    • [SECTION] Name: [Unnamed]
+                                                        └─ Action 0: clickAncestor
+                                                        └─ Action 1: showContextMenu
+                                                      • [SECTION] Name: [Unnamed]
+                                                          └─ Action 0: clickAncestor
+                                                          └─ Action 1: showContextMenu
+                                                      • [SECTION] Name: [Unnamed]
+                                                          └─ Action 0: clickAncestor
+                                                          └─ Action 1: showContextMenu
+                                                        • [SECTION] Name: [Unnamed]
+                                                            └─ Action 0: clickAncestor
+                                                            └─ Action 1: showContextMenu
+                                                          • [SECTION] Name: [Unnamed]
+                                                              └─ Action 0: click
+                                                              └─ Action 1: showContextMenu
+                                                            • [SECTION] Name: [Unnamed]
+                                                                └─ Action 0: clickAncestor
+                                                                └─ Action 1: showContextMenu
+                                                              • [SECTION] Name: [Unnamed]
+                                                                  └─ Action 0: clickAncestor
+                                                                  └─ Action 1: showContextMenu
+                                                              • [SECTION] Name: [Unnamed]
+                                                                  └─ Action 0: clickAncestor
+                                                                  └─ Action 1: showContextMenu
+                                                                • [SECTION] Name: [Unnamed]
+                                                                    └─ Action 0: clickAncestor
+                                                                    └─ Action 1: showContextMenu
+                                                                  • [SECTION] Name: [Unnamed]
+                                                                      └─ Action 0: clickAncestor
+                                                                      └─ Action 1: showContextMenu
+                                                                    • [SECTION] Name: [Unnamed]
+                                                                        └─ Action 0: click
+                                                                        └─ Action 1: showContextMenu
+                                                                      • [SECTION] Name: [Unnamed]
+                                                                          └─ Action 0: clickAncestor
+                                                                          └─ Action 1: showContextMenu
+                                                                        • [LIST] Name: [Unnamed]
+                                                                            └─ Action 0: clickAncestor
+                                                                            └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name: (venv) kshayik@kshayiks-hp-victus:~/Projects/mr-meeseeks$ 
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                          • [LIST ITEM] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name:  
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                        • [SECTION] Name: [Unnamed]
+                                                                            └─ Action 0: clickAncestor
+                                                                            └─ Action 1: showContextMenu
+                                                                      • [CANVAS] Name: [Unnamed]
+                                                                          └─ Action 0: clickAncestor
+                                                                          └─ Action 1: showContextMenu
+                                                                      • [SECTION] Name: [Unnamed]
+                                                                          └─ Action 0: clickAncestor
+                                                                          └─ Action 1: showContextMenu
+                                                                      • [SECTION] Name: [Unnamed]
+                                                                          └─ Action 0: click
+                                                                          └─ Action 1: showContextMenu
+                                                                        • [SECTION] Name: [Unnamed]
+                                                                            └─ Action 0: clickAncestor
+                                                                            └─ Action 1: showContextMenu
+                                                                          • [ENTRY] Name: Terminal 1, bash Use Shift+Alt+F1 for terminal accessibility help
+                                                                              └─ Action 0: activate
+                                                                              └─ Action 1: showContextMenu
+                                                                        • [SECTION] Name: [Unnamed]
+                                                                            └─ Action 0: clickAncestor
+                                                                            └─ Action 1: showContextMenu
+                                                                          • [SECTION] Name: [Unnamed]
+                                                                              └─ Action 0: clickAncestor
+                                                                              └─ Action 1: showContextMenu
+                                                                            • [STATIC] Name: 
+                                                                                └─ Action 0: clickAncestor
+                                                                                └─ Action 1: showContextMenu
+                                                                        • [SECTION] Name: [Unnamed]
+                                                                            └─ Action 0: clickAncestor
+                                                                            └─ Action 1: showContextMenu
+                                                                        • [CANVAS] Name: [Unnamed]
+                                                                            └─ Action 0: clickAncestor
+                                                                            └─ Action 1: showContextMenu
+                                                                        • [CANVAS] Name: [Unnamed]
+                                                                            └─ Action 0: clickAncestor
+                                                                            └─ Action 1: showContextMenu
+                                                                  • [STATUS BAR] Name: [Unnamed]
+                                                                      └─ Action 0: clickAncestor
+                                                                      └─ Action 1: showContextMenu
+                                                                    • [STATIC] Name: 181 x 42
+                                                                        └─ Action 0: clickAncestor
+                                                                        └─ Action 1: showContextMenu
+                            • [SECTION] Name: [Unnamed]
+                                └─ Action 0: clickAncestor
+                                └─ Action 1: showContextMenu
+                              • [STATUS BAR] Name: [Unnamed]
+                                  └─ Action 0: clickAncestor
+                                  └─ Action 1: showContextMenu
+                                • [SECTION] Name: remote
+                                    └─ Action 0: click
+                                    └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: remote
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                • [SECTION] Name: mr-meeseeks (Git) - main*, Checkout Branch/Tag...
+                                    └─ Action 0: click
+                                    └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: mr-meeseeks (Git) - main*, Checkout Branch/Tag...
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                    • [STATIC] Name: 
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                    • [STATIC] Name:  main*
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                • [SECTION] Name: mr-meeseeks (Git) - Synchronize Changes
+                                    └─ Action 0: click
+                                    └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: mr-meeseeks (Git) - Synchronize Changes
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                • [SECTION] Name: No Problems
+                                    └─ Action 0: click
+                                    └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: No Problems
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                    • [STATIC] Name: 
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                    • [STATIC] Name:  0 
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                    • [STATIC] Name: 
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                    • [STATIC] Name:  0
+                                        └─ Action 0: clickAncestor
+                                        └─ Action 1: showContextMenu
+                                • [SECTION] Name: Notifications
+                                    └─ Action 0: click
+                                    └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: Notifications
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                • [SECTION] Name: Copilot status
+                                    └─ Action 0: click
+                                    └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: Copilot status
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                                • [SECTION] Name: Screen Reader Optimized
+                                    └─ Action 0: click
+                                    └─ Action 1: showContextMenu
+                                  • [PUSH BUTTON] Name: Screen Reader Optimized
+                                      └─ Action 0: press
+                                      └─ Action 1: showContextMenu
+                      • [SECTION] Name: [Unnamed]
+                          └─ Action 0: clickAncestor
+                          └─ Action 1: showContextMenu
+                        • [NOTIFICATION] Name: [Unnamed]
+                            └─ Action 0: clickAncestor
+                            └─ Action 1: showContextMenu
+                          • [STATIC] Name: Info: You have Docker installed on your system. Do you want to install the recommended 'Dev Containers' extension from Microsoft for it?
+                              └─ Action 0: clickAncestor
+                              └─ Action 1: showContextMenu
+                        • [NOTIFICATION] Name: [Unnamed]
+                            └─ Action 0: clickAncestor
+                            └─ Action 1: showContextMenu
+                        • [SECTION] Name: [Unnamed]
+                            └─ Action 0: clickAncestor
+                            └─ Action 1: showContextMenu
+                          • [STATIC] Name: Command Succeeded
+                              └─ Action 0: clickAncestor
+                              └─ Action 1: showContextMenu
+                        • [SECTION] Name: [Unnamed]
+                            └─ Action 0: clickAncestor
+                            └─ Action 1: showContextMenu
+              • [PANEL] Name: [Unnamed]
+                  └─ Action 0: doDefault
+                  └─ Action 1: showContextMenu
+--- CLICKABLE ITEMS IN VS CODE ---
+[APPLICATION] -> Name: code (Action: doDefault)
+[FRAME] -> Name: mr-meeseeks - Visual Studio Code (Action: doDefault)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+[PUSH BUTTON] -> Name: Minimize (Action: press)
+[PUSH BUTTON] -> Name: Maximize (Action: click)
+[PUSH BUTTON] -> Name: Restore (Action: press)
+[PUSH BUTTON] -> Name: Close (Action: press)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+[DOCUMENT WEB] -> Name: mr-meeseeks - Visual Studio Code (Action: doDefault)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[EMBEDDED] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[MENU BAR] -> Name: [Unnamed] (Action: clickAncestor)
+[MENU ITEM] -> Name: File (Action: select)
+[MENU ITEM] -> Name: Edit (Action: select)
+[MENU ITEM] -> Name: Selection (Action: select)
+[MENU ITEM] -> Name: View (Action: select)
+[MENU ITEM] -> Name: Go (Action: select)
+[MENU ITEM] -> Name: Run (Action: select)
+[MENU ITEM] -> Name: Terminal (Action: select)
+[MENU ITEM] -> Name: Help (Action: select)
+[TOOL BAR] -> Name: [Unnamed] (Action: clickAncestor)
+[PUSH BUTTON] -> Name: Go Back (Ctrl+Alt+-) (Action: press)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[PUSH BUTTON] -> Name: Go Forward (Ctrl+Shift+-) (Action: press)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[TOOL BAR] -> Name: Agent Status (Action: click)
+[PUSH BUTTON] -> Name: Open Quick Access (Action: press)
+[PUSH BUTTON] -> Name:  1 (Action: press)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[STATIC] -> Name: 1 (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[PUSH BUTTON] -> Name: Toggle Chat (Action: click)
+[PUSH BUTTON] -> Name: Toggle Chat (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[PUSH BUTTON] -> Name: More Actions (Action: open)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[TOOL BAR] -> Name: Title actions (Action: clickAncestor)
+[PUSH BUTTON] -> Name: Open in Agents Window (Action: press)
+[PUSH BUTTON] -> Name: Customize Layout... (Action: press)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[TOGGLE BUTTON] -> Name: Toggle Primary Side Bar (Ctrl+B) (Action: check)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[TOGGLE BUTTON] -> Name: Toggle Panel (Ctrl+J) (Action: uncheck)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[TOGGLE BUTTON] -> Name: Toggle Secondary Side Bar (Ctrl+Alt+B) (Action: check)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB LIST] -> Name: Active View Switcher (Action: clickAncestor)
+[PAGE TAB] -> Name: Explorer (Ctrl+Shift+E) (Action: click)
+[SECTION] -> Name: Explorer (Ctrl+Shift+E) (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB] -> Name: Search (Ctrl+Shift+F) (Action: click)
+[SECTION] -> Name: Search (Ctrl+Shift+F) (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB] -> Name: Source Control (Ctrl+Shift+G) - 5 pending changes (Action: click)
+[SECTION] -> Name: Source Control (Ctrl+Shift+G) - 5 pending changes (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: Source Control (Ctrl+Shift+G) - 5 pending changes (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name: 5 (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB] -> Name: Run and Debug (Ctrl+Shift+D) (Action: click)
+[SECTION] -> Name: Run and Debug (Ctrl+Shift+D) (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB] -> Name: Extensions (Ctrl+Shift+X) (Action: click)
+[SECTION] -> Name: Extensions (Ctrl+Shift+X) (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB] -> Name: Testing (Action: click)
+[SECTION] -> Name: Testing (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[TOOL BAR] -> Name: Manage (Action: clickAncestor)
+[PUSH BUTTON] -> Name: Accounts (Action: open)
+[SECTION] -> Name: Accounts (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PUSH BUTTON] -> Name: Manage (Action: open)
+[SECTION] -> Name: Manage (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB LIST] -> Name: Active View Switcher (Action: clickAncestor)
+[PAGE TAB] -> Name: Problems (Ctrl+Shift+M) (Action: click)
+[SECTION] -> Name: Problems (Ctrl+Shift+M) (Action: clickAncestor)
+[STATIC] -> Name: PROBLEMS (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB] -> Name: Output (Ctrl+K Ctrl+H) (Action: click)
+[SECTION] -> Name: Output (Ctrl+K Ctrl+H) (Action: clickAncestor)
+[STATIC] -> Name: OUTPUT (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB] -> Name: Debug Console (Ctrl+Shift+Y) (Action: click)
+[SECTION] -> Name: Debug Console (Ctrl+Shift+Y) (Action: clickAncestor)
+[STATIC] -> Name: DEBUG CONSOLE (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB] -> Name: Terminal (Ctrl+`) (Action: click)
+[SECTION] -> Name: Terminal (Ctrl+`) (Action: clickAncestor)
+[STATIC] -> Name: TERMINAL (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PAGE TAB] -> Name: Ports (Action: click)
+[SECTION] -> Name: Ports (Action: clickAncestor)
+[STATIC] -> Name: PORTS (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[TOOL BAR] -> Name: Terminal actions (Action: clickAncestor)
+[PUSH BUTTON] -> Name: Focus Terminal (Ctrl+DownArrow) [Alt] Split Terminal (Ctrl+Shift+5) (Action: press)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[STATIC] -> Name: bash (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[PUSH BUTTON] -> Name: New Terminal (Ctrl+Shift+`) [Alt] Split Terminal (Ctrl+Shift+5) (Action: press)
+[PUSH BUTTON] -> Name: New Terminal (Ctrl+Shift+`) [Alt] Split Terminal (Ctrl+Shift+5) (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[PUSH BUTTON] -> Name: Launch Profile... (Action: open)
+[PUSH BUTTON] -> Name: Split Terminal (Ctrl+Shift+5) (Action: press)
+[PUSH BUTTON] -> Name: Kill Terminal (Action: press)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[PUSH BUTTON] -> Name: Views and More Actions... (Action: open)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[TOOL BAR] -> Name: [Unnamed] (Action: clickAncestor)
+[TOGGLE BUTTON] -> Name: Restore Panel (Action: uncheck)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[PUSH BUTTON] -> Name: Hide Panel (Ctrl+J) (Action: press)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[LIST] -> Name: [Unnamed] (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name: (venv) kshayik@kshayiks-hp-victus:~/Projects/mr-meeseeks$  (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[LIST ITEM] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:   (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[CANVAS] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: click)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[ENTRY] -> Name: Terminal 1, bash Use Shift+Alt+F1 for terminal accessibility help (Action: activate)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[CANVAS] -> Name: [Unnamed] (Action: clickAncestor)
+[CANVAS] -> Name: [Unnamed] (Action: clickAncestor)
+[STATUS BAR] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name: 181 x 42 (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATUS BAR] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: remote (Action: click)
+[PUSH BUTTON] -> Name: remote (Action: press)
+[SECTION] -> Name: mr-meeseeks (Git) - main*, Checkout Branch/Tag... (Action: click)
+[PUSH BUTTON] -> Name: mr-meeseeks (Git) - main*, Checkout Branch/Tag... (Action: press)
+[STATIC] -> Name:  (Action: clickAncestor)
+[STATIC] -> Name:  main* (Action: clickAncestor)
+[SECTION] -> Name: mr-meeseeks (Git) - Synchronize Changes (Action: click)
+[PUSH BUTTON] -> Name: mr-meeseeks (Git) - Synchronize Changes (Action: press)
+[SECTION] -> Name: No Problems (Action: click)
+[PUSH BUTTON] -> Name: No Problems (Action: press)
+[STATIC] -> Name:  (Action: clickAncestor)
+[STATIC] -> Name:  0  (Action: clickAncestor)
+[STATIC] -> Name:  (Action: clickAncestor)
+[STATIC] -> Name:  0 (Action: clickAncestor)
+[SECTION] -> Name: Notifications (Action: click)
+[PUSH BUTTON] -> Name: Notifications (Action: press)
+[SECTION] -> Name: Copilot status (Action: click)
+[PUSH BUTTON] -> Name: Copilot status (Action: press)
+[SECTION] -> Name: Screen Reader Optimized (Action: click)
+[PUSH BUTTON] -> Name: Screen Reader Optimized (Action: press)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[NOTIFICATION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name: Info: You have Docker installed on your system. Do you want to install the recommended 'Dev Containers' extension from Microsoft for it? (Action: clickAncestor)
+[NOTIFICATION] -> Name: [Unnamed] (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[STATIC] -> Name: Command Succeeded (Action: clickAncestor)
+[SECTION] -> Name: [Unnamed] (Action: clickAncestor)
+[PANEL] -> Name: [Unnamed] (Action: doDefault)
+kshayik@kshayiks-hp-victus:~/Projects/mr-meeseeks$ 

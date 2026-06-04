@@ -1,0 +1,101 @@
+2026-06-04 19:47:16,915 [main] Logging to logs/outputs/run_20260604_194716.txt
+2026-06-04 19:47:17,019 [llm_provider] [Ollama] model=qwen2.5:3b url=http://localhost:11434/api/chat
+2026-06-04 19:47:17,019 [llm_provider] LLM provider initialized: ollama/qwen2.5:3b
+2026-06-04 19:47:17,019 [main] LLM backend: ollama/qwen2.5:3b
+2026-06-04 19:47:17,021 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-04 19:47:17,022 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-04 19:47:17,022 [ipc_bus] Registered handler: check_battery
+2026-06-04 19:47:17,022 [ipc_bus] Registered handler: get_active_window
+2026-06-04 19:47:17,022 [ipc_bus] Registered handler: list_open_windows
+2026-06-04 19:47:17,022 [ipc_bus] Registered handler: read_notifications
+2026-06-04 19:47:17,022 [sysadmin] SysAdmin agent registered ✓
+2026-06-04 19:47:17,022 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-04 19:47:17,022 [ipc_bus] Registered handler: list_memory_keys
+2026-06-04 19:47:17,022 [ipc_bus] Registered handler: update_memory
+2026-06-04 19:47:17,022 [ipc_bus] Registered handler: fetch_memory
+2026-06-04 19:47:17,022 [memory_agent] Memory agent registered ✓
+2026-06-04 19:47:17,023 [ipc_bus] Registered handler: simple_scrape
+2026-06-04 19:47:17,023 [ipc_bus] Registered handler: gui_research
+2026-06-04 19:47:17,023 [web_agent] Web agent registered ✓
+2026-06-04 19:47:17,120 [ipc_bus] Registered handler: move_mouse
+2026-06-04 19:47:17,121 [ipc_bus] Registered handler: click
+2026-06-04 19:47:17,121 [ipc_bus] Registered handler: type_text
+2026-06-04 19:47:17,121 [ipc_bus] Registered handler: key_press
+2026-06-04 19:47:17,121 [ipc_bus] Registered handler: scroll
+2026-06-04 19:47:17,121 [hands_agent] Hands agent registered ✓
+2026-06-04 19:47:17,156 [ipc_bus] Registered handler: get_ui_elements
+2026-06-04 19:47:17,156 [ipc_bus] Registered handler: read_element_text
+2026-06-04 19:47:17,156 [ipc_bus] Registered handler: find_element_by_label
+2026-06-04 19:47:17,156 [ipc_bus] Registered handler: list_at_spi_apps
+2026-06-04 19:47:17,156 [eyes_agent] Eyes agent registered ✓
+2026-06-04 19:47:17,159 [main] Kernel listener started ✓
+2026-06-04 19:47:18,385 [state_machine] State: IDLE → THINKING
+2026-06-04 19:47:18,392 [brain] Unified call for: hi
+2026-06-04 19:47:18,460 [kernel] Kernel listener starting...
+2026-06-04 19:47:18,470 [kernel] Kernel state warm: window='test-list-ui.py - mr-meeseeks - Visual Studio Code - Untracked', 8 windows, battery=99%
+2026-06-04 19:47:27,587 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 19:47:27,606 [brain] Unified raw: Hi there! How can I assist you today?
+2026-06-04 19:47:27,606 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-04 19:47:27,610 [memory_agent] Memory updated: last_interaction
+2026-06-04 19:47:27,611 [state_machine] State: THINKING → IDLE
+2026-06-04 19:47:47,434 [state_machine] State: IDLE → THINKING
+2026-06-04 19:47:47,435 [brain] Unified call for: what are the clickable ui elements in this window?
+2026-06-04 19:47:51,377 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 19:47:51,378 [brain] Unified raw: {"tool": "get_ui_elements", "args": {"app": "mr-meeseeks"}}
+2026-06-04 19:47:51,378 [brain] Unified → AGENTIC (tool: get_ui_elements)
+2026-06-04 19:47:51,379 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 19:47:51,379 [brain] Dispatching → get_ui_elements({'app': 'mr-meeseeks'})
+2026-06-04 19:47:51,445 [brain] Result: {'by_cat': {}, 'total': 0, 'scanned_apps': [], 'note': "No app matching 'mr-meeseeks' found on AT-SPI bus. Common names: 'code' (VS Code), 'firefox', 'gnome-terminal-server'. The app must have accessibility enabled."}
+2026-06-04 19:47:51,445 [brain] ReAct step 2/10
+2026-06-04 19:48:08,051 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 19:48:08,051 [brain] Raw output: {"thought": "No clickable UI elements were found in the current window or application. It's possible that the application is not set up for accessibility, or there are no interactive elements visible.", "tool": "done", "args": {"speech": "I couldn't find any clickable UI elements in this window. Ple
+2026-06-04 19:48:08,052 [brain] Thought: No clickable UI elements were found in the current window or application. It's possible that the application is not set up for accessibility, or there are no interactive elements visible.
+2026-06-04 19:48:08,052 [brain] ReAct done. Speech: I couldn't find any clickable UI elements in this window. Please ensure the app has accessibility enabled and try again.
+2026-06-04 19:48:08,052 [memory_agent] Memory updated: last_interaction
+2026-06-04 19:48:08,052 [state_machine] State: THINKING → IDLE
+2026-06-04 19:48:19,552 [state_machine] State: IDLE → THINKING
+2026-06-04 19:48:19,552 [brain] Unified call for: it is enabled try calling it code
+2026-06-04 19:48:25,482 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 19:48:25,483 [brain] Unified raw: {"tool": "get_ui_elements", "args": {"app": "code"}}
+2026-06-04 19:48:25,483 [brain] Unified → AGENTIC (tool: get_ui_elements)
+2026-06-04 19:48:25,483 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 19:48:25,483 [brain] Dispatching → get_ui_elements({'app': 'code'})
+2026-06-04 19:48:25,561 [brain] Result: {'by_cat': {'other': [{'id': '0', 'name': 'code', 'role': 'application'}, {'id': '1', 'name': 'test-list-ui.py - mr-meeseeks - Visual Studio Code - Untracked', 'role': 'frame', 'x': 768, 'y': 448}, {'id': '19', 'name': 'Agent Status', 'role': 'tool bar', 'x': 992, 'y': 61}, {'id': '27', 'name': 'Tit
+2026-06-04 19:48:25,561 [brain] ReAct step 2/10
+2026-06-04 19:48:51,625 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 19:48:51,626 [brain] Raw output: {
+  "thought": "The UI elements have been scanned and categorized. The active window is 'test-list-ui.py - mr-meeseeks - Visual Studio Code - Untracked'.",
+  "tool": "done",
+  "args": {
+    "speech": "Active window details: Name - test-list-ui.py - mr-meeseeks - Visual Studio Code - Untracked, Role 
+2026-06-04 19:48:51,626 [brain] Thought: The UI elements have been scanned and categorized. The active window is 'test-list-ui.py - mr-meeseeks - Visual Studio Code - Untracked'.
+2026-06-04 19:48:51,626 [brain] ReAct done. Speech: Active window details: Name - test-list-ui.py - mr-meeseeks - Visual Studio Code - Untracked, Role - frame. UI elements categorized into categories such as buttons, menu, tabs, content, and other.
+2026-06-04 19:48:51,626 [memory_agent] Memory updated: last_interaction
+2026-06-04 19:48:51,626 [state_machine] State: THINKING → IDLE
+2026-06-04 19:49:29,846 [state_machine] State: IDLE → THINKING
+2026-06-04 19:49:29,847 [brain] Unified call for: any clickable buttons in the git control tab?
+2026-06-04 19:49:32,284 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-04 19:49:33,090 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'test-list-ui.py - mr-meeseeks - Visual Studio Code - Untracked'}
+2026-06-04 19:49:36,308 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-04 19:49:37,112 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': '(89) WhatsApp — Mozilla Firefox'}
+2026-06-04 19:49:38,894 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'what is this project?', 'Terminal', 'Spider-Noir – DoraWatch — Mozilla Firefox', 'mr-meeseeks', 'test-list-ui.py - mr-meeseeks - Visual Studio Code - Untracked', 'Desktop Icons 1', '(88) WhatsApp — Mozilla Firefox']}
+2026-06-04 19:49:39,527 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': '(88) WhatsApp — Mozilla Firefox'}
+2026-06-04 19:49:45,947 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 19:49:45,948 [brain] Unified raw: {"tool": "get_ui_elements", "args": {"app": "code", "region": {"x1": 260, "y1": 854, "x2": 379, "y2": 954}}}
+2026-06-04 19:49:45,948 [brain] Unified → AGENTIC (tool: get_ui_elements)
+2026-06-04 19:49:45,948 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 19:49:45,948 [brain] Dispatching → get_ui_elements({'app': 'code', 'region': {'x1': 260, 'y1': 854, 'x2': 379, 'y2': 954}})
+2026-06-04 19:49:46,202 [brain] Result: {'by_cat': {}, 'total': 0, 'scanned_apps': ['code'], 'region': {'x1': 260, 'y1': 854, 'x2': 379, 'y2': 954}}
+2026-06-04 19:49:46,202 [brain] ReAct step 2/10
+2026-06-04 19:50:02,920 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 19:50:02,929 [brain] Raw output: {
+  "thought": "No clickable buttons found in the Git Control tab of Visual Studio Code.",
+  "tool": "done",
+  "args": {
+    "speech": "I couldn't find any clickable buttons within the Git Control tab of your Visual Studio Code instance."
+  }
+}
+2026-06-04 19:50:02,929 [brain] Thought: No clickable buttons found in the Git Control tab of Visual Studio Code.
+2026-06-04 19:50:02,929 [brain] ReAct done. Speech: I couldn't find any clickable buttons within the Git Control tab of your Visual Studio Code instance.
+2026-06-04 19:50:02,929 [memory_agent] Memory updated: last_interaction
+2026-06-04 19:50:02,929 [state_machine] State: THINKING → IDLE

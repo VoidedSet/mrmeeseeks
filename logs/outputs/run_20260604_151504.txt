@@ -1,0 +1,49 @@
+2026-06-04 15:15:04,743 [main] Logging to logs/outputs/run_20260604_151504.txt
+2026-06-04 15:15:04,852 [llm_provider] [Ollama] model=qwen2.5:3b url=http://localhost:11434/api/chat
+2026-06-04 15:15:04,852 [llm_provider] LLM provider initialized: ollama/qwen2.5:3b
+2026-06-04 15:15:04,852 [main] LLM backend: ollama/qwen2.5:3b
+2026-06-04 15:15:04,854 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-04 15:15:04,854 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-04 15:15:04,854 [ipc_bus] Registered handler: check_battery
+2026-06-04 15:15:04,854 [ipc_bus] Registered handler: get_active_window
+2026-06-04 15:15:04,854 [ipc_bus] Registered handler: list_open_windows
+2026-06-04 15:15:04,854 [ipc_bus] Registered handler: read_notifications
+2026-06-04 15:15:04,854 [sysadmin] SysAdmin agent registered ✓
+2026-06-04 15:15:04,855 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-04 15:15:04,855 [ipc_bus] Registered handler: list_memory_keys
+2026-06-04 15:15:04,855 [ipc_bus] Registered handler: update_memory
+2026-06-04 15:15:04,855 [ipc_bus] Registered handler: fetch_memory
+2026-06-04 15:15:04,855 [memory_agent] Memory agent registered ✓
+2026-06-04 15:15:04,855 [ipc_bus] Registered handler: simple_scrape
+2026-06-04 15:15:04,855 [ipc_bus] Registered handler: gui_research
+2026-06-04 15:15:04,855 [web_agent] Web agent registered ✓
+2026-06-04 15:15:04,921 [ipc_bus] Registered handler: move_mouse
+2026-06-04 15:15:04,921 [ipc_bus] Registered handler: click
+2026-06-04 15:15:04,921 [ipc_bus] Registered handler: type_text
+2026-06-04 15:15:04,921 [ipc_bus] Registered handler: key_press
+2026-06-04 15:15:04,921 [ipc_bus] Registered handler: scroll
+2026-06-04 15:15:04,921 [hands_agent] Hands agent registered ✓
+2026-06-04 15:15:04,942 [ipc_bus] Registered handler: get_ui_elements
+2026-06-04 15:15:04,942 [ipc_bus] Registered handler: read_element_text
+2026-06-04 15:15:04,942 [ipc_bus] Registered handler: find_element_by_label
+2026-06-04 15:15:04,942 [eyes_agent] Eyes agent registered ✓
+2026-06-04 15:15:04,944 [main] Kernel listener started ✓
+2026-06-04 15:15:26,530 [state_machine] State: IDLE → THINKING
+2026-06-04 15:15:26,548 [brain] Unified call for: hi can you go through the contents and ui clickable elements
+2026-06-04 15:15:26,614 [kernel] Kernel listener starting...
+2026-06-04 15:15:26,624 [kernel] Kernel state warm: window='eyes_agent.py - mr-meeseeks - Visual Studio Code', 8 windows, battery=100%
+2026-06-04 15:15:34,137 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 15:15:34,138 [brain] Unified raw: {"thought": "User wants to see what's open in Code and its UI elements.", "tool": "get_ui_elements", "args": {"app": "Visual Studio Code"}}
+2026-06-04 15:15:34,138 [brain] Unified → AGENTIC (tool: get_ui_elements)
+2026-06-04 15:15:34,138 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-04 15:15:34,138 [brain] Thought: User wants to see what's open in Code and its UI elements.
+2026-06-04 15:15:34,138 [brain] Dispatching → get_ui_elements({'app': 'Visual Studio Code'})
+2026-06-04 15:15:34,749 [brain] Result: {'by_app': {}, 'total': 0, 'filtered_by': {'app': 'Visual Studio Code'}}
+2026-06-04 15:15:34,749 [brain] ReAct step 2/10
+2026-06-04 15:15:48,992 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-04 15:15:48,992 [brain] Raw output: {"thought": "get_ui_elements did not return any elements for Visual Studio Code.", "tool": "done", "args": {"speech": "There are no visible UI elements open in Visual Studio Code at this moment."}}
+2026-06-04 15:15:48,992 [brain] Thought: get_ui_elements did not return any elements for Visual Studio Code.
+2026-06-04 15:15:48,993 [brain] ReAct done. Speech: There are no visible UI elements open in Visual Studio Code at this moment.
+2026-06-04 15:15:49,001 [memory_agent] Memory updated: last_interaction
+2026-06-04 15:15:49,001 [state_machine] State: THINKING → IDLE
+2026-06-04 15:18:23,126 [main] Kernel listener stopped.

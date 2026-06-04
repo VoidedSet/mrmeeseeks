@@ -10,14 +10,20 @@ TOOL_SCHEMAS = {
     # ── Eyes ──
     "get_ui_elements": {
         "description": (
-            "Read visible UI elements on screen. Filter with optional args to avoid getting everything at once. "
-            "app: filter to one application. "
-            "region: {x1,y1,x2,y2} bounding box to get elements in a screen area (e.g. top bar = {x1:0,y1:0,x2:1920,y2:50})."
+            "Get interactive UI elements in an app or screen region. "
+            "IMPORTANT: app= takes the PROCESS name (e.g. 'code' for VS Code, 'firefox' for Firefox), NOT the window title. "
+            "If unsure of the process name, call list_at_spi_apps first. "
+            "region={x1,y1,x2,y2} filters by screen area (e.g. top bar: {x1:0,y1:0,x2:1920,y2:50}). "
+            "Returns elements grouped by category: buttons, menu, tabs, inputs, links, content."
         ),
         "args": {
-            "app":    "string (optional) — filter to a specific app e.g. 'Firefox', 'Visual Studio Code'",
+            "app":    "string (optional) — PROCESS name e.g. 'code', 'firefox', 'gnome-terminal-server'",
             "region": "object (optional) — {x1: int, y1: int, x2: int, y2: int} screen region bounding box",
         }
+    },
+    "list_at_spi_apps": {
+        "description": "List all apps on the AT-SPI accessibility bus with their process names. Call this first when you don't know the exact app name for get_ui_elements.",
+        "args": {}
     },
     "read_element_text": {
         "description": "Read text from a specific UI element by id.",
@@ -118,6 +124,7 @@ TOOL_SCHEMAS = {
 # ── Required args per tool ─────────────────────────────────────────────────────
 REQUIRED_ARGS: dict[str, list[str]] = {
     "get_ui_elements":      [],
+    "list_at_spi_apps":     [],
     "read_element_text":    ["id"],
     "find_element_by_label":["label"],
     "move_mouse":           ["x", "y"],
