@@ -163,6 +163,10 @@ READ_ONLY_CMDS = {
     "sort", "uniq", "cut", "awk", "sed", "tr", "diff", "less",
     "realpath", "dirname", "basename",
 
+    # ── Config (Safe mutation) ──
+    "gsettings", "dbus-send",
+
+
     # ── Process / system info ──
     "top", "htop", "lsof", "pgrep", "pstree",
     "lscpu", "lsmem", "lsblk", "lspci", "lsusb", "lshw",
@@ -251,3 +255,32 @@ def is_destructive(cmd: str) -> bool:
     """Check if a shell command contains destructive operations."""
     first_word = cmd.strip().split()[0] if cmd.strip() else ""
     return first_word in DESTRUCTIVE_CMDS or any(d in cmd for d in {"> /", "sudo rm", "sudo dd"})
+
+def get_openai_tools() -> list[dict]:
+    """Convert TOOL_SCHEMAS to OpenAI/Ollama native tools array format."""
+    tools = []
+    for name, schema in TOOL_SCHEMAS.items():
+        required = REQUIRED_ARGS.get(name, [])
+        properties = {}
+        for arg_name, arg_desc in schema.get("args", {}).items():
+            arg_type = "string"
+            if "int" in arg_desc: arg_type = "integer"
+            elif "object" in arg_desc: arg_type = "object"
+            elif "list" in arg_desc: arg_type = "array"
+            elif "any" in arg_desc: arg_type = "string"  # fallback
+            
+            properties[arg_name] = {"type": arg_type, "description": arg_desc}
+        
+        tools.append({
+            "type": "function",
+            "function": {
+                "name": name,
+                "description": schema["description"],
+                "parameters": {
+                    "type": "object",
+                    "properties": properties,
+                    "required": required
+                }
+            }
+        })
+    return tools

@@ -1,0 +1,115 @@
+2026-06-05 01:38:20,417 [main] Logging to logs/outputs/run_20260605_013820.txt
+2026-06-05 01:38:20,492 [llm_provider] [Ollama] model=qwen2.5-coder:1.5b url=http://localhost:11434/api/chat
+2026-06-05 01:38:20,492 [llm_provider] LLM provider initialized: ollama/qwen2.5-coder:1.5b
+2026-06-05 01:38:20,492 [main] LLM backend: ollama/qwen2.5-coder:1.5b
+2026-06-05 01:38:20,495 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-05 01:38:20,495 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-05 01:38:20,495 [ipc_bus] Registered handler: check_battery
+2026-06-05 01:38:20,495 [ipc_bus] Registered handler: get_active_window
+2026-06-05 01:38:20,495 [ipc_bus] Registered handler: list_open_windows
+2026-06-05 01:38:20,495 [ipc_bus] Registered handler: read_notifications
+2026-06-05 01:38:20,495 [sysadmin] SysAdmin agent registered ✓
+2026-06-05 01:38:20,496 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-05 01:38:20,496 [ipc_bus] Registered handler: list_memory_keys
+2026-06-05 01:38:20,496 [ipc_bus] Registered handler: update_memory
+2026-06-05 01:38:20,496 [ipc_bus] Registered handler: fetch_memory
+2026-06-05 01:38:20,496 [memory_agent] Memory agent registered ✓
+2026-06-05 01:38:20,562 [ipc_bus] Registered handler: simple_scrape
+2026-06-05 01:38:20,562 [ipc_bus] Registered handler: gui_research
+2026-06-05 01:38:20,562 [web_agent] Web agent registered ✓
+2026-06-05 01:38:20,618 [ipc_bus] Registered handler: click_at
+2026-06-05 01:38:20,618 [ipc_bus] Registered handler: double_click_at
+2026-06-05 01:38:20,618 [ipc_bus] Registered handler: type_text
+2026-06-05 01:38:20,618 [ipc_bus] Registered handler: key_press
+2026-06-05 01:38:20,618 [ipc_bus] Registered handler: scroll
+2026-06-05 01:38:20,618 [hands_agent] Hands agent registered ✓
+2026-06-05 01:38:20,647 [ipc_bus] Registered handler: get_ui_elements
+2026-06-05 01:38:20,648 [ipc_bus] Registered handler: read_element_text
+2026-06-05 01:38:20,648 [ipc_bus] Registered handler: find_element_by_label
+2026-06-05 01:38:20,648 [ipc_bus] Registered handler: list_at_spi_apps
+2026-06-05 01:38:20,648 [eyes_agent] Eyes agent registered ✓
+2026-06-05 01:38:20,649 [ipc_bus] Registered handler: speak
+2026-06-05 01:38:20,649 [voice_agent] Initializing Kokoro TTS engine from /home/kshayik/Projects/mr-meeseeks/models/kokoro-v1.0.int8.onnx...
+2026-06-05 01:38:20,649 [voice_agent] Voice agent registered ✓
+2026-06-05 01:38:20,656 [main] Kernel listener started ✓
+2026-06-05 01:38:21,688 [voice_agent] Kokoro TTS engine initialized successfully ✓
+2026-06-05 01:38:23,070 [voice_input] Loading Whisper model (tiny.en, CPU, int8)...
+2026-06-05 01:38:23,591 [httpx] HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-tiny.en/revision/main "HTTP/1.1 200 OK"
+2026-06-05 01:38:23,809 [voice_input] Whisper model loaded successfully ✓
+2026-06-05 01:38:24,571 [voice_input] Transcribing recorded audio...
+2026-06-05 01:38:24,571 [faster_whisper] Processing audio with duration 00:00.734
+2026-06-05 01:38:25,606 [state_machine] State: IDLE → THINKING
+2026-06-05 01:38:25,616 [brain] Unified call for: So...
+2026-06-05 01:38:25,638 [kernel] Kernel listener starting...
+2026-06-05 01:38:25,714 [kernel] Kernel state warm: window='mr-meeseeks - Visual Studio Code', 6 windows, battery=100%, 6 apps bridged
+2026-06-05 01:38:32,958 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-05 01:38:33,762 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Terminal'}
+2026-06-05 01:38:34,553 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:38:34,554 [brain] Unified raw content: I'm Mr Meeseeks, your local AI OS companion running on Ubuntu. How can I assist you today?
+2026-06-05 01:38:34,554 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-05 01:38:34,562 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:38:34,563 [state_machine] State: THINKING → IDLE
+2026-06-05 01:38:34,563 [voice_agent] Queuing speak request: 'I'm Mr Meeseeks, your local AI OS companion running on Ubunt...'
+2026-06-05 01:38:34,563 [voice_agent] Synthesizing speech: 'I'm Mr Meeseeks, your local AI OS companion running on Ubunt...'
+2026-06-05 01:38:43,785 [voice_agent] Playing synthesized audio...
+2026-06-05 01:38:56,547 [voice_input] Transcribing recorded audio...
+2026-06-05 01:38:56,547 [faster_whisper] Processing audio with duration 00:03.593
+2026-06-05 01:38:56,871 [state_machine] State: IDLE → THINKING
+2026-06-05 01:38:56,871 [brain] Unified call for: You can start by speaking faster.
+2026-06-05 01:38:56,898 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:39:02,918 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:39:02,918 [brain] Unified raw content: Sure, I'll do my best to speak quickly and clearly!
+2026-06-05 01:39:02,926 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-05 01:39:02,926 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:39:02,926 [state_machine] State: THINKING → IDLE
+2026-06-05 01:39:02,926 [voice_agent] Queuing speak request: 'Sure, I'll do my best to speak quickly and clearly!...'
+2026-06-05 01:39:02,926 [voice_agent] Synthesizing speech: 'Sure, I'll do my best to speak quickly and clearly!...'
+2026-06-05 01:39:07,782 [voice_agent] Playing synthesized audio...
+2026-06-05 01:39:21,056 [voice_input] Transcribing recorded audio...
+2026-06-05 01:39:21,056 [faster_whisper] Processing audio with duration 00:04.276
+2026-06-05 01:39:21,550 [state_machine] State: IDLE → THINKING
+2026-06-05 01:39:21,550 [brain] Unified call for: What do it can you call it?
+2026-06-05 01:39:27,841 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:39:27,842 [brain] Unified raw content: I'm Mr Meeseeks, your local AI OS companion running on Ubuntu. How can I assist you today?
+2026-06-05 01:39:27,842 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-05 01:39:27,842 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:39:27,842 [state_machine] State: THINKING → IDLE
+2026-06-05 01:39:27,842 [voice_agent] Queuing speak request: 'I'm Mr Meeseeks, your local AI OS companion running on Ubunt...'
+2026-06-05 01:39:27,842 [voice_agent] Synthesizing speech: 'I'm Mr Meeseeks, your local AI OS companion running on Ubunt...'
+2026-06-05 01:39:37,170 [voice_agent] Playing synthesized audio...
+2026-06-05 01:41:29,852 [voice_input] Transcribing recorded audio...
+2026-06-05 01:41:29,860 [faster_whisper] Processing audio with duration 00:02.238
+2026-06-05 01:41:30,183 [state_machine] State: IDLE → THINKING
+2026-06-05 01:41:30,183 [brain] Unified call for: What can you do?
+2026-06-05 01:41:36,470 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:41:36,471 [brain] Unified raw content: I'm Mr Meeseeks, your local AI OS companion running on Ubuntu. How can I assist you today?
+2026-06-05 01:41:36,471 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-05 01:41:36,479 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:41:36,480 [state_machine] State: THINKING → IDLE
+2026-06-05 01:41:36,480 [voice_agent] Queuing speak request: 'I'm Mr Meeseeks, your local AI OS companion running on Ubunt...'
+2026-06-05 01:41:36,480 [voice_agent] Synthesizing speech: 'I'm Mr Meeseeks, your local AI OS companion running on Ubunt...'
+2026-06-05 01:41:45,553 [voice_agent] Playing synthesized audio...
+2026-06-05 01:46:44,556 [voice_input] Transcribing recorded audio...
+2026-06-05 01:46:44,564 [faster_whisper] Processing audio with duration 00:05.417
+2026-06-05 01:46:44,989 [state_machine] State: IDLE → THINKING
+2026-06-05 01:46:44,989 [brain] Unified call for: Can you open the mobile chrome or firebox?
+2026-06-05 01:46:53,994 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:46:53,995 [brain] Unified raw content: Sure, I'll open the mobile Chrome and Firefox for you. Please let me know if there's anything else I can help with!
+2026-06-05 01:46:53,995 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-05 01:46:53,996 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:46:53,996 [state_machine] State: THINKING → IDLE
+2026-06-05 01:46:53,996 [voice_agent] Queuing speak request: 'Sure, I'll open the mobile Chrome and Firefox for you. Pleas...'
+2026-06-05 01:46:53,996 [voice_agent] Synthesizing speech: 'Sure, I'll open the mobile Chrome and Firefox for you. Pleas...'
+2026-06-05 01:47:05,281 [voice_agent] Playing synthesized audio...
+2026-06-05 01:47:14,806 [voice_input] Transcribing recorded audio...
+2026-06-05 01:47:14,806 [faster_whisper] Processing audio with duration 00:03.006
+2026-06-05 01:47:15,206 [state_machine] State: IDLE → THINKING
+2026-06-05 01:47:15,206 [brain] Unified call for: Open fire box.
+2026-06-05 01:47:21,667 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': '.gitignore - mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:47:21,843 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:47:21,844 [brain] Unified raw content: I'm Mr Meeseeks, your local AI OS companion running on Ubuntu. Opening Firebox now... Please wait a moment.
+2026-06-05 01:47:21,844 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-05 01:47:21,845 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:47:21,845 [state_machine] State: THINKING → IDLE
+2026-06-05 01:47:21,845 [voice_agent] Queuing speak request: 'I'm Mr Meeseeks, your local AI OS companion running on Ubunt...'
+2026-06-05 01:47:21,845 [voice_agent] Synthesizing speech: 'I'm Mr Meeseeks, your local AI OS companion running on Ubunt...'

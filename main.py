@@ -73,6 +73,9 @@ async def main():
     from agents.eyes_agent import register as reg_eyes
     reg_eyes()
 
+    from agents.voice_agent import register as reg_voice
+    reg_voice()
+
     # ── Wire brain ───────────────────────────────────────────────────────────
     from core.brain import brain
     brain.inject_memory_agent(memory)
@@ -93,17 +96,27 @@ async def main():
     print("╚══════════════════════════════════════════╝")
     print()
 
+    # ── Voice Input Manager ──────────────────────────────────────────────────
+    from core.voice_input import VoiceInputManager
+    voice_input_mgr = VoiceInputManager()
+
     # ── REPL ─────────────────────────────────────────────────────────────────
     try:
         while True:
+            used_voice = False
             try:
-                user_input = input("You: ").strip()
+                user_input = input("You (Press Enter to speak, or type): ").strip()
             except (EOFError, KeyboardInterrupt):
                 print("\n[Meeseeks] Goodbye.")
                 break
 
             if not user_input:
-                continue
+                used_voice = True
+                user_input = voice_input_mgr.record_and_transcribe()
+                if not user_input:
+                    print("[Meeseeks] No voice input detected.")
+                    continue
+                print(f"You (voice): {user_input}")
 
             if user_input.lower() in {"exit", "quit", "bye"}:
                 print("[Meeseeks] Goodbye.")
@@ -114,6 +127,10 @@ async def main():
             try:
                 response = await brain.process(user_input)
                 print(f"\n[Meeseeks] {response}\n")
+                
+                if used_voice:
+                    from core.ipc_bus import bus
+                    await bus.dispatch("speak", {"text": response})
                 
                 # Feedback loop
                 if brain.last_interaction:

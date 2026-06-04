@@ -34,7 +34,6 @@ _OLLAMA_DEFAULTS = {
 # ── Abstract Base ─────────────────────────────────────────────────────────────
 class LLMProvider(ABC):
 
-    @abstractmethod
     async def complete(
         self,
         system_prompt: str,
@@ -42,12 +41,14 @@ class LLMProvider(ABC):
         temperature: float = 0.2,
         max_tokens: int = 512,
         force_json: bool = True,
-    ) -> str:
+        tools: list[dict] = None,
+    ) -> dict:
         """
         Send a chat completion request.
         force_json=True  → tell the model to output only JSON (for ReAct loop)
         force_json=False → plain text response OK (for conversational path)
-        Returns raw string content from the model.
+        tools            → list of OpenAI-format tool schemas
+        Returns: {"content": str, "tool_calls": list[dict]}
         """
 
     @property
@@ -87,7 +88,8 @@ class GroqProvider(LLMProvider):
         temperature: float = 0.2,
         max_tokens: int = 512,
         force_json: bool = True,
-    ) -> str:
+        tools: list[dict] = None,
+    ) -> dict:
         payload = {
             "model":       self.model,
             "messages":    [{"role": "system", "content": system_prompt}] + messages,
@@ -96,8 +98,12 @@ class GroqProvider(LLMProvider):
         }
 
         # Only force JSON for agentic ReAct calls, not conversational
-        if force_json:
+        if force_json and not tools:
             payload["response_format"] = {"type": "json_object"}
+        
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -113,9 +119,25 @@ class GroqProvider(LLMProvider):
             resp.raise_for_status()
             data = resp.json()
 
-        content = data["choices"][0]["message"]["content"].strip()
+        message = data["choices"][0]["message"]
+        content = message.get("content", "") or ""
+        
+        parsed_tools = []
+        if message.get("tool_calls"):
+            for tc in message["tool_calls"]:
+                func = tc.get("function", {})
+                args_str = func.get("arguments", "{}")
+                try:
+                    args = json.loads(args_str)
+                except Exception:
+                    args = {}
+                parsed_tools.append({
+                    "name": func.get("name"),
+                    "args": args
+                })
+
         log.debug(f"[Groq] raw → {content[:200]}")
-        return content
+        return {"content": content.strip(), "tool_calls": parsed_tools}
 
 
 # ── Ollama Provider ───────────────────────────────────────────────────────────
@@ -142,7 +164,8 @@ class OllamaProvider(LLMProvider):
         temperature: float = 0.2,
         max_tokens: int = 512,
         force_json: bool = True,
-    ) -> str:
+        tools: list[dict] = None,
+    ) -> dict:
         payload = {
             "model":    self.model,
             "messages": [{"role": "system", "content": system_prompt}] + messages,
@@ -150,20 +173,36 @@ class OllamaProvider(LLMProvider):
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
+                "num_ctx": 16384,
             },
         }
 
-        # Ollama JSON mode — only for agentic calls
-        if force_json:
+        # Ollama JSON mode (fallback if no tools)
+        if force_json and not tools:
             payload["format"] = "json"
+            
+        if tools:
+            payload["tools"] = tools
 
         async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.post(self.url, json=payload)
             resp.raise_for_status()
-            content = resp.json()["message"]["content"].strip()
+            data = resp.json()
+            message = data.get("message", {})
+            content = message.get("content", "") or ""
+            
+            parsed_tools = []
+            if message.get("tool_calls"):
+                for tc in message["tool_calls"]:
+                    func = tc.get("function", {})
+                    args_dict = func.get("arguments", {})
+                    parsed_tools.append({
+                        "name": func.get("name"),
+                        "args": args_dict
+                    })
 
         log.debug(f"[Ollama] raw → {content[:200]}")
-        return content
+        return {"content": content.strip(), "tool_calls": parsed_tools}
 
 
 # ── Factory ───────────────────────────────────────────────────────────────────

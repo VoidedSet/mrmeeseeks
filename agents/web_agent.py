@@ -13,35 +13,39 @@ from core.ipc_bus import bus
 log = logging.getLogger("web_agent")
 
 
+from bs4 import BeautifulSoup
+
 async def _duckduckgo_search(query: str) -> str | None:
-    """DuckDuckGo Instant Answers API — free, no key required."""
+    """Scrape real DuckDuckGo HTML results."""
     try:
-        url = (
-            "https://api.duckduckgo.com/"
-            f"?q={urllib.parse.quote(query)}&format=json&no_html=1&skip_disambig=1"
-        )
-        async with httpx.AsyncClient(timeout=8) as client:
-            resp = await client.get(url, headers={"User-Agent": "MrMeeseeksBot/1.0"})
-            data = resp.json()
-
-        # AbstractText = direct answer paragraph
-        abstract = data.get("AbstractText", "").strip()
-        if abstract:
-            source = data.get("AbstractSource", "")
-            return f"{abstract}" + (f" (via {source})" if source else "")
-
-        # RelatedTopics = list of relevant snippets
-        topics = data.get("RelatedTopics", [])
+        url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5"
+        }
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+            resp = await client.get(url, headers=headers)
+            resp.raise_for_status()
+            
+        soup = BeautifulSoup(resp.text, "html.parser")
+        results = soup.find_all("div", class_="result")
+        
         snippets = []
-        for t in topics[:3]:
-            if isinstance(t, dict) and t.get("Text"):
-                snippets.append(t["Text"].strip())
+        for res in results[:3]:
+            title_elem = res.find("a", class_="result__url")
+            snippet_elem = res.find("a", class_="result__snippet")
+            
+            if title_elem and snippet_elem:
+                title = title_elem.get_text(strip=True)
+                snippet = snippet_elem.get_text(strip=True)
+                snippets.append(f"- {title}: {snippet}")
+                
         if snippets:
             return "\n".join(snippets)
-
         return None
     except Exception as e:
-        log.debug(f"DDG failed: {e}")
+        log.debug(f"DDG HTML failed: {e}")
         return None
 
 

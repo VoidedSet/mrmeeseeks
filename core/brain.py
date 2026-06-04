@@ -21,7 +21,7 @@ from typing import Optional
 
 import httpx
 
-from core.schema_registry import TOOL_SCHEMAS, validate_tool_call
+from core.schema_registry import TOOL_SCHEMAS, validate_tool_call, get_openai_tools
 from core.ipc_bus import bus
 from core.state_machine import StateMachine, State
 import core.llm_provider as llm_mod
@@ -331,8 +331,15 @@ def parse_tool_call(raw: str) -> Optional[dict]:
     for blob in candidates:
         try:
             parsed = json.loads(blob)
-            if isinstance(parsed, dict) and "tool" in parsed:
-                return parsed
+            if isinstance(parsed, dict):
+                # Standardize OpenAI/Ollama function calling schema keys to Mr Meeseeks format
+                if "name" in parsed and "tool" not in parsed:
+                    parsed["tool"] = parsed["name"]
+                if "arguments" in parsed and "args" not in parsed:
+                    parsed["args"] = parsed["arguments"]
+                
+                if "tool" in parsed:
+                    return parsed
         except json.JSONDecodeError:
             continue
 
@@ -365,22 +372,33 @@ async def unified_first_call(
     log.info(f"Unified call for: {user_input[:60]}")
 
     try:
-        raw = await provider.complete(
+        response = await provider.complete(
             system_prompt=system_prompt,
             messages=messages,
             temperature=0.5,
             max_tokens=300,
             force_json=False,  # model picks plain text or JSON naturally
+            tools=get_openai_tools()
         )
     except Exception as e:
         log.error(f"Unified LLM call failed: {e}")
         return f"Sorry, something went wrong: {e}", None
 
-    raw = raw.strip()
-    log.info(f"Unified raw: {raw[:200]}")
+    raw_content = response.get("content", "").strip()
+    log.info(f"Unified raw content: {raw_content[:200]}")
 
-    # Try to parse as a tool call
-    tool_call = parse_tool_call(raw)
+    # Check for native tool calls
+    tool_call = None
+    if response.get("tool_calls"):
+        tc = response["tool_calls"][0]
+        tool_call = {
+            "thought": raw_content,
+            "tool": tc.get("name"),
+            "args": tc.get("args", {})
+        }
+    else:
+        # Fallback to textual parsing just in case model ignores native tools
+        tool_call = parse_tool_call(raw_content)
 
     if tool_call is not None:
         valid, error = validate_tool_call(tool_call)
@@ -396,20 +414,20 @@ async def unified_first_call(
     log.info("Unified → CONVERSATIONAL (plain text)")
 
     # Handle edge case: Groq json_object mode forces JSON even with force_json=False
-    if raw.startswith("{"):
+    if raw_content.startswith("{"):
         try:
-            parsed = json.loads(raw)
+            parsed = json.loads(raw_content)
             text = (
                 parsed.get("response")
                 or parsed.get("speech")
                 or parsed.get("args", {}).get("speech")
-                or raw
+                or raw_content
             )
             return str(text), None
         except json.JSONDecodeError:
             pass
 
-    return raw, None
+    return raw_content, None
 
 
 # ── ReAct Loop ────────────────────────────────────────────────────────────────
@@ -512,10 +530,12 @@ async def react_loop(
             messages.append({"role": "user", "content": obs_text})
 
         try:
-            raw_output = await provider.complete(
-                system_prompt,
-                messages,
-                force_json=True,  # agentic — must emit strict JSON
+            response = await provider.complete(
+                system_prompt=system_prompt,
+                messages=messages,
+                temperature=0.2,
+                force_json=True,
+                tools=get_openai_tools()
             )
         except httpx.HTTPStatusError as e:
             log.error(f"LLM HTTP error: {e.response.status_code}")
@@ -526,12 +546,22 @@ async def react_loop(
             log.error(f"LLM call failed: {e}")
             return f"Sorry, I couldn't reach the LLM backend: {e}", all_tool_calls, False
 
+        raw_output = response.get("content", "")
         log.info(f"Raw output: {raw_output[:300]}")
 
         # ── Parse ────────────────────────────────────────────────────────────
-        tool_call = parse_tool_call(raw_output)
+        tool_call = None
+        if response.get("tool_calls"):
+            tc = response["tool_calls"][0]
+            tool_call = {
+                "thought": raw_output,
+                "tool": tc.get("name"),
+                "args": tc.get("args", {})
+            }
+        else:
+            tool_call = parse_tool_call(raw_output)
 
-        if tool_call is None:
+        if not tool_call:
             parse_failures += 1
             log.warning(f"Parse failure {parse_failures}/{MAX_PARSE_FAIL}: {raw_output[:200]}")
             if parse_failures >= MAX_PARSE_FAIL:
@@ -607,7 +637,7 @@ async def react_loop(
 
 
 # ── Context Builder ───────────────────────────────────────────────────────────
-async def build_context(memory_agent, kernel_events: list) -> dict:
+async def build_context(memory_agent, kernel_events: list, user_prompt: str = "") -> dict:
     """
     Pull OS context + memory to inject into system prompt.
 
@@ -639,11 +669,7 @@ async def build_context(memory_agent, kernel_events: list) -> dict:
         except Exception:
             pass
 
-    keywords = extract_keywords_from_events(kernel_events)
-
     memory = {}
-    if memory_agent and keywords:
-        memory = await memory_agent.fetch_memory(keywords)
 
     cwd = os.getcwd()
 
@@ -704,7 +730,7 @@ class Brain:
         """
         await self.state_machine.transition(State.THINKING)
 
-        context = await build_context(self.memory_agent, self.kernel_events)
+        context = await build_context(self.memory_agent, self.kernel_events, user_input)
 
         plain_text, tool_call = await unified_first_call(user_input, self.history, context)
 

@@ -1,0 +1,195 @@
+2026-06-05 01:12:12,579 [main] Logging to logs/outputs/run_20260605_011212.txt
+2026-06-05 01:12:12,650 [llm_provider] [Ollama] model=qwen2.5:3b url=http://localhost:11434/api/chat
+2026-06-05 01:12:12,650 [llm_provider] LLM provider initialized: ollama/qwen2.5:3b
+2026-06-05 01:12:12,650 [main] LLM backend: ollama/qwen2.5:3b
+2026-06-05 01:12:12,652 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-05 01:12:12,652 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-05 01:12:12,652 [ipc_bus] Registered handler: check_battery
+2026-06-05 01:12:12,652 [ipc_bus] Registered handler: get_active_window
+2026-06-05 01:12:12,652 [ipc_bus] Registered handler: list_open_windows
+2026-06-05 01:12:12,652 [ipc_bus] Registered handler: read_notifications
+2026-06-05 01:12:12,652 [sysadmin] SysAdmin agent registered ✓
+2026-06-05 01:12:12,652 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-05 01:12:12,652 [ipc_bus] Registered handler: list_memory_keys
+2026-06-05 01:12:12,652 [ipc_bus] Registered handler: update_memory
+2026-06-05 01:12:12,652 [ipc_bus] Registered handler: fetch_memory
+2026-06-05 01:12:12,652 [memory_agent] Memory agent registered ✓
+2026-06-05 01:12:12,707 [ipc_bus] Registered handler: simple_scrape
+2026-06-05 01:12:12,707 [ipc_bus] Registered handler: gui_research
+2026-06-05 01:12:12,707 [web_agent] Web agent registered ✓
+2026-06-05 01:12:12,751 [ipc_bus] Registered handler: click_at
+2026-06-05 01:12:12,751 [ipc_bus] Registered handler: double_click_at
+2026-06-05 01:12:12,751 [ipc_bus] Registered handler: type_text
+2026-06-05 01:12:12,751 [ipc_bus] Registered handler: key_press
+2026-06-05 01:12:12,751 [ipc_bus] Registered handler: scroll
+2026-06-05 01:12:12,751 [hands_agent] Hands agent registered ✓
+2026-06-05 01:12:12,786 [ipc_bus] Registered handler: get_ui_elements
+2026-06-05 01:12:12,786 [ipc_bus] Registered handler: read_element_text
+2026-06-05 01:12:12,786 [ipc_bus] Registered handler: find_element_by_label
+2026-06-05 01:12:12,786 [ipc_bus] Registered handler: list_at_spi_apps
+2026-06-05 01:12:12,786 [eyes_agent] Eyes agent registered ✓
+2026-06-05 01:12:12,787 [main] Kernel listener started ✓
+2026-06-05 01:12:14,930 [state_machine] State: IDLE → THINKING
+2026-06-05 01:12:14,940 [brain] Unified call for: hii
+2026-06-05 01:12:14,988 [kernel] Kernel listener starting...
+2026-06-05 01:12:15,054 [kernel] Kernel state warm: window='.env - mr-meeseeks - Visual Studio Code', 5 windows, battery=100%, 5 apps bridged
+2026-06-05 01:12:16,667 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'what is this project?'}
+2026-06-05 01:12:17,471 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Terminal'}
+2026-06-05 01:12:21,504 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': '.env - mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:12:30,317 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:12:30,318 [brain] Unified raw content: Hi there! How can I assist you today?
+2026-06-05 01:12:30,318 [brain] Unified → CONVERSATIONAL (plain text)
+2026-06-05 01:12:30,327 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:12:30,327 [state_machine] State: THINKING → IDLE
+2026-06-05 01:12:39,081 [state_machine] State: IDLE → THINKING
+2026-06-05 01:12:39,082 [memory_agent] No match found for key 'list' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:12:39,082 [memory_agent] No match found for key 'clickable' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:12:39,082 [memory_agent] No match found for key 'elements' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:12:39,082 [brain] Unified call for: can you list all the clickable elements in the ui
+2026-06-05 01:12:48,756 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Terminal'}
+2026-06-05 01:12:49,562 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': '.env - mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:12:50,898 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:12:50,899 [brain] Unified raw content: 
+2026-06-05 01:12:50,899 [brain] Unified → AGENTIC (tool: get_ui_elements)
+2026-06-05 01:12:50,899 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-05 01:12:50,899 [brain] Dispatching → get_ui_elements({'app': 'code'})
+2026-06-05 01:12:50,928 [brain] Result: {'by_cat': {'other': [{'id': '0', 'name': 'code', 'role': 'application'}, {'id': '1', 'name': '.env - mr-meeseeks - Visual Studio Code', 'role': 'frame', 'x': 768, 'y': 448}, {'id': '19', 'name': 'Agent Status', 'role': 'tool bar', 'x': 992, 'y': 61}, {'id': '28', 'name': 'Title actions', 'role': 't
+2026-06-05 01:12:50,928 [brain] ReAct step 2/10
+2026-06-05 01:13:44,756 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:13:44,757 [brain] Raw output: Here are some clickable elements in your current UI:
+
+- **Buttons**: 
+  - Minimize (x: 1456, y: 48)
+  - Maximize (x: 1488, y: 46)
+  - Restore (x: 1488, y: 48)
+  - Close (x: 1520, y: 48)
+  - Go Back (Ctrl+Alt+-) (x: 576, y: 61)
+  - Go Forward (Ctrl+Shift+-) (x: 609, y: 61)
+  - Open Quick Access (x: 9
+2026-06-05 01:13:44,757 [brain] Parse failure 1/3: Here are some clickable elements in your current UI:
+
+- **Buttons**: 
+  - Minimize (x: 1456, y: 48)
+  - Maximize (x: 1488, y: 46)
+  - Restore (x: 1488, y: 48)
+  - Close (x: 1520, y: 48)
+  - Go Back (C
+2026-06-05 01:13:44,757 [brain] ReAct step 3/10
+2026-06-05 01:13:49,964 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:13:49,965 [brain] Raw output: {"thought": "Clickable elements in the UI include buttons, menu items, and tabs. I'll list them for you.", "tool": "done", "args": {"speech": "The clickable elements in the UI are as follows:\nButtons: Minimize, Maximize, Restore, Close, Go Back (Ctrl+Alt+-), Go Forward (Ctrl+Shift+-), Open Quick Ac
+2026-06-05 01:13:49,972 [brain] Thought: Clickable elements in the UI include buttons, menu items, and tabs. I'll list them for you.
+2026-06-05 01:13:49,972 [brain] ReAct done. Speech: The clickable elements in the UI are as follows:
+Buttons: Minimize, Maximize, Restore, Close, Go Back (Ctrl+Alt+-), Go Forward (Ctrl+Shift+-), Open Quick Access, 1, Toggle Chat, More Actions, Open in Agents Window, Customize Layout..., Toggle Primary Side Bar (Ctrl+B), Toggle Panel (Ctrl+J), Toggle Secondary Side Bar (Ctrl+Alt+B).
+Menu Items: File, Edit, Selection, View, Go, Run, Terminal, Help.
+Tabs: Active View Switcher, Explorer (Ctrl+Shift+E).
+2026-06-05 01:13:49,973 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:13:49,973 [state_machine] State: THINKING → IDLE
+2026-06-05 01:14:21,313 [brain] Saved finetune sample.
+2026-06-05 01:14:27,739 [state_machine] State: IDLE → THINKING
+2026-06-05 01:14:27,739 [memory_agent] No match found for key 'okay' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:14:27,739 [memory_agent] No match found for key 'open' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:14:27,740 [memory_agent] No match found for key 'explorer?' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:14:27,740 [brain] Unified call for: okay can you open the explorer?
+2026-06-05 01:14:32,587 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified'}
+2026-06-05 01:14:33,772 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified', 'Terminal']}
+2026-06-05 01:14:51,554 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:14:51,555 [brain] Unified raw content: 
+2026-06-05 01:14:51,555 [brain] Unified → AGENTIC (tool: open_visible_terminal)
+2026-06-05 01:14:51,555 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-05 01:14:51,555 [brain] Dispatching → open_visible_terminal({'cmd': 'code --explorer'})
+2026-06-05 01:14:51,805 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified', 'Terminal', 'Terminal']}
+2026-06-05 01:14:51,890 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Terminal'}
+2026-06-05 01:14:52,702 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Visual Studio Code'}
+2026-06-05 01:14:54,811 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified', 'Terminal', 'Terminal', 'Welcome - Visual Studio Code']}
+2026-06-05 01:14:55,120 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Welcome - Visual Studio Code'}
+2026-06-05 01:14:56,985 [brain] Result: {'output': "Warning: 'explorer' is not in the list of known options, but still passed to Electron/Chromium."}
+2026-06-05 01:14:56,986 [brain] ReAct step 2/10
+2026-06-05 01:14:57,817 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified', 'Terminal', 'Welcome - Visual Studio Code']}
+2026-06-05 01:15:00,753 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified'}
+2026-06-05 01:15:36,916 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:15:36,917 [brain] Raw output: I encountered an issue trying to open the Explorer directly. To access the Explorer feature within Visual Studio Code, you can try using the shortcut `Ctrl+Shift+E`. Would you like me to guide you through that?
+2026-06-05 01:15:36,917 [brain] Parse failure 1/3: I encountered an issue trying to open the Explorer directly. To access the Explorer feature within Visual Studio Code, you can try using the shortcut `Ctrl+Shift+E`. Would you like me to guide you thr
+2026-06-05 01:15:36,917 [brain] ReAct step 3/10
+2026-06-05 01:15:39,513 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:15:39,514 [brain] Raw output: {"thought": "The 'explorer' command is not recognized, attempting to open the explorer via a different method.", "tool": "open_visible_terminal", "args": {"cmd": "code --list-views | grep Explorer"}}
+2026-06-05 01:15:39,514 [brain] Thought: The 'explorer' command is not recognized, attempting to open the explorer via a different method.
+2026-06-05 01:15:39,515 [brain] Dispatching → open_visible_terminal({'cmd': 'code --list-views | grep Explorer'})
+2026-06-05 01:15:39,896 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified', 'Terminal', 'Welcome - Visual Studio Code', 'Terminal']}
+2026-06-05 01:15:40,186 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Terminal'}
+2026-06-05 01:15:40,991 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Visual Studio Code'}
+2026-06-05 01:15:42,605 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Welcome - Visual Studio Code'}
+2026-06-05 01:15:42,901 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified', 'Terminal', 'Welcome - Visual Studio Code', 'Terminal', 'Welcome - Visual Studio Code']}
+2026-06-05 01:15:44,888 [brain] Result: {'output': '(no output)'}
+2026-06-05 01:15:44,888 [brain] ReAct step 4/10
+2026-06-05 01:15:45,907 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified', 'Terminal', 'Welcome - Visual Studio Code', 'Welcome - Visual Studio Code']}
+2026-06-05 01:15:49,039 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-05 01:15:49,423 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:15:49,424 [brain] Raw output: {"thought": "The 'code --list-views' command did not return any output, indicating the explorer view might be hidden or not accessible via a direct Electron/Chromium call.", "tool": "done", "args": {"speech": "It seems that opening the Explorer view directly is not possible. You can try manually nav
+2026-06-05 01:15:49,424 [brain] Thought: The 'code --list-views' command did not return any output, indicating the explorer view might be hidden or not accessible via a direct Electron/Chromium call.
+2026-06-05 01:15:49,424 [brain] ReAct done. Speech: It seems that opening the Explorer view directly is not possible. You can try manually navigating to it using the File > View > Explorer menu option.
+2026-06-05 01:15:49,432 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:15:49,432 [state_machine] State: THINKING → IDLE
+2026-06-05 01:16:02,114 [brain] Saved finetune sample.
+2026-06-05 01:16:20,959 [state_machine] State: IDLE → THINKING
+2026-06-05 01:16:20,962 [memory_agent] No match found for key 'nope' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,962 [memory_agent] No match found for key 'want' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,962 [memory_agent] No match found for key 'specifically' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,962 [memory_agent] No match found for key 'find' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,962 [memory_agent] No match found for key 'that' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,962 [memory_agent] No match found for key 'element's' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,962 [memory_agent] No match found for key 'coordinates' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,963 [memory_agent] No match found for key 'move' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,963 [memory_agent] No match found for key 'cursor' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,963 [memory_agent] No match found for key 'there' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,963 [memory_agent] No match found for key 'click' (stored: ['firefox_accessibility_fix_instructions', 'last_interaction'])
+2026-06-05 01:16:20,963 [brain] Unified call for: nope i want you to specifically find that ui element's coord
+2026-06-05 01:16:20,987 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified'}
+2026-06-05 01:16:20,991 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified', 'Terminal', 'Welcome - Visual Studio Code']}
+2026-06-05 01:16:47,453 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:16:47,454 [brain] Unified raw content: {"thought": "To find the 'Explorer' view, I will first list all UI elements in Visual Studio Code. Then I'll locate the Explorer tab and get its position to move the cursor and click on it.", "tool": 
+2026-06-05 01:16:47,454 [brain] Unified → AGENTIC (tool: get_ui_elements)
+2026-06-05 01:16:47,454 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-05 01:16:47,454 [brain] Thought: To find the 'Explorer' view, I will first list all UI elements in Visual Studio Code. Then I'll locate the Explorer tab and get its position to move the cursor and click on it.
+2026-06-05 01:16:47,454 [brain] Dispatching → get_ui_elements({'app': 'code'})
+2026-06-05 01:16:47,485 [brain] Result: {'by_cat': {'other': [{'id': '0', 'name': 'code', 'role': 'application'}, {'id': '1', 'name': 'dataset.jsonl - mr-meeseeks - Visual Studio Code - Modified', 'role': 'frame', 'x': 768, 'y': 448}, {'id': '19', 'name': 'Agent Status', 'role': 'tool bar', 'x': 992, 'y': 61}, {'id': '28', 'name': 'Title 
+2026-06-05 01:16:47,485 [brain] ReAct step 2/10
+2026-06-05 01:17:41,824 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:17:41,825 [brain] Raw output: 
+2026-06-05 01:17:41,825 [brain] Dispatching → find_element_by_label({'label': 'Explorer (Ctrl+Shift+E)'})
+2026-06-05 01:17:42,382 [brain] Result: {'matches': [{'id': '84', 'name': 'Explorer (Ctrl+Shift+E)', 'role': 'page tab', 'cat': 'tabs', 'x': 30, 'y': 113}, {'id': '85', 'name': 'Explorer (Ctrl+Shift+E)', 'role': 'section', 'cat': 'other', 'x': 30, 'y': 113}, {'id': '148', 'name': '{"input": "who is better messi or ronaldo verify with stat
+2026-06-05 01:17:42,382 [brain] ReAct step 3/10
+2026-06-05 01:18:41,811 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:18:41,812 [brain] Raw output: Based on the provided tool calls and context, I was able to list all the clickable elements in the UI for the VS Code window. The clickable elements include buttons like Minimize, Maximize, Restore, Close, Go Back (Ctrl+Alt+-), Go Forward (Ctrl+Shift+-), Open Quick Access, 1, Toggle Chat, More Actio
+2026-06-05 01:18:41,812 [brain] Parse failure 1/3: Based on the provided tool calls and context, I was able to list all the clickable elements in the UI for the VS Code window. The clickable elements include buttons like Minimize, Maximize, Restore, C
+2026-06-05 01:18:41,813 [brain] ReAct step 4/10
+2026-06-05 01:18:41,962 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': '.env - mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:18:42,515 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', '.env - mr-meeseeks - Visual Studio Code', 'Terminal', 'Welcome - Visual Studio Code']}
+2026-06-05 01:18:54,535 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'run_20260605_010812.txt - mr-meeseeks - Visual Studio Code - Untracked', 'Terminal', 'Welcome - Visual Studio Code']}
+2026-06-05 01:18:54,831 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'test-list-ui.py - mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:18:55,636 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'schema_registry.py - mr-meeseeks - Visual Studio Code - Modified'}
+2026-06-05 01:18:56,440 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:18:57,540 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'mr-meeseeks - Visual Studio Code', 'Terminal', 'Welcome - Visual Studio Code']}
+2026-06-05 01:19:10,946 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-05 01:19:14,968 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:19:18,990 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-05 01:19:19,794 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:19:38,154 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:19:38,155 [brain] Raw output: {"thought": "your reasoning", "tool": "get_ui_elements", "args": {"app": "code", "region": {"x1": 0, "y1": 0, "x2": 1920, "y2": 80}}}
+2026-06-05 01:19:38,155 [brain] Thought: your reasoning
+2026-06-05 01:19:38,155 [brain] Dispatching → get_ui_elements({'app': 'code', 'region': {'x1': 0, 'y1': 0, 'x2': 1920, 'y2': 80}})
+2026-06-05 01:19:38,332 [brain] Result: {'by_cat': {'buttons': [{'id': '0', 'name': 'Minimize', 'role': 'push button', 'x': 1456, 'y': 48}, {'id': '1', 'name': 'Maximize', 'role': 'push button', 'x': 1488, 'y': 46}, {'id': '2', 'name': 'Restore', 'role': 'push button', 'x': 1488, 'y': 48}, {'id': '3', 'name': 'Close', 'role': 'push button
+2026-06-05 01:19:38,332 [brain] ReAct step 5/10
+2026-06-05 01:20:27,479 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-05 01:20:29,089 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:20:30,698 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-05 01:20:32,308 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Terminal'}
+2026-06-05 01:20:38,353 [brain] LLM call failed: 
+2026-06-05 01:20:38,354 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:20:38,354 [brain] Compressing context...
+2026-06-05 01:20:38,354 [brain] Raw log saved → logs/raw/chat_20260605_012038.json
+2026-06-05 01:21:18,964 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'mr-meeseeks - Visual Studio Code'}
+2026-06-05 01:21:37,468 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'run_20260605_011212.txt - mr-meeseeks - Visual Studio Code - Untracked'}
+2026-06-05 01:21:38,376 [brain] Compression LLM call failed: . Keeping last 10 messages.
+2026-06-05 01:21:38,377 [state_machine] State: THINKING → IDLE
+2026-06-05 01:21:42,851 [brain] Saved finetune sample.
+2026-06-05 01:21:48,974 [main] Kernel listener stopped.
