@@ -1,0 +1,64 @@
+2026-06-05 02:00:15,001 [main] Logging to logs/outputs/run_20260605_020015.txt
+2026-06-05 02:00:15,089 [llm_provider] [Ollama] model=qwen2.5-coder:1.5b url=http://localhost:11434/api/chat
+2026-06-05 02:00:15,089 [llm_provider] LLM provider initialized: ollama/qwen2.5-coder:1.5b
+2026-06-05 02:00:15,089 [main] LLM backend: ollama/qwen2.5-coder:1.5b
+2026-06-05 02:00:15,092 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-05 02:00:15,092 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-05 02:00:15,093 [ipc_bus] Registered handler: check_battery
+2026-06-05 02:00:15,093 [ipc_bus] Registered handler: get_active_window
+2026-06-05 02:00:15,093 [ipc_bus] Registered handler: list_open_windows
+2026-06-05 02:00:15,093 [ipc_bus] Registered handler: read_notifications
+2026-06-05 02:00:15,093 [sysadmin] SysAdmin agent registered ✓
+2026-06-05 02:00:15,093 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-05 02:00:15,094 [ipc_bus] Registered handler: list_memory_keys
+2026-06-05 02:00:15,094 [ipc_bus] Registered handler: update_memory
+2026-06-05 02:00:15,094 [ipc_bus] Registered handler: fetch_memory
+2026-06-05 02:00:15,094 [memory_agent] Memory agent registered ✓
+2026-06-05 02:00:15,182 [ipc_bus] Registered handler: simple_scrape
+2026-06-05 02:00:15,182 [ipc_bus] Registered handler: gui_research
+2026-06-05 02:00:15,182 [web_agent] Web agent registered ✓
+2026-06-05 02:00:15,293 [ipc_bus] Registered handler: click_at
+2026-06-05 02:00:15,293 [ipc_bus] Registered handler: double_click_at
+2026-06-05 02:00:15,293 [ipc_bus] Registered handler: type_text
+2026-06-05 02:00:15,293 [ipc_bus] Registered handler: key_press
+2026-06-05 02:00:15,293 [ipc_bus] Registered handler: scroll
+2026-06-05 02:00:15,293 [hands_agent] Hands agent registered ✓
+2026-06-05 02:00:15,329 [ipc_bus] Registered handler: get_ui_elements
+2026-06-05 02:00:15,329 [ipc_bus] Registered handler: read_element_text
+2026-06-05 02:00:15,329 [ipc_bus] Registered handler: find_element_by_label
+2026-06-05 02:00:15,329 [ipc_bus] Registered handler: list_at_spi_apps
+2026-06-05 02:00:15,329 [eyes_agent] Eyes agent registered ✓
+2026-06-05 02:00:15,331 [ipc_bus] Registered handler: speak
+2026-06-05 02:00:15,331 [voice_agent] Voice agent registered ✓
+2026-06-05 02:00:15,331 [voice_agent] Initializing Kokoro TTS engine from /home/kshayik/Projects/mr-meeseeks/models/kokoro-v1.0.int8.onnx...
+2026-06-05 02:00:15,335 [main] Kernel listener started ✓
+2026-06-05 02:00:15,770 [kernel] Kernel listener starting...
+2026-06-05 02:00:15,921 [kernel] Kernel state warm: window='run_20260605_015254.txt - mr-meeseeks - Visual Studio Code - Untracked', 8 windows, battery=100%, 8 apps bridged
+2026-06-05 02:00:16,029 [voice_agent] Kokoro TTS: CUDA detected. Running on GPU ✓
+2026-06-05 02:00:16,784 [voice_agent] Kokoro TTS engine initialized successfully ✓
+2026-06-05 02:00:17,817 [voice_input] Loading Whisper model (tiny.en, CPU, int8)...
+2026-06-05 02:00:18,417 [httpx] HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-tiny.en/revision/main "HTTP/1.1 200 OK"
+2026-06-05 02:00:18,702 [voice_input] Whisper model loaded successfully ✓
+2026-06-05 02:00:24,416 [voice_input] Transcribing recorded audio...
+2026-06-05 02:00:24,416 [faster_whisper] Processing audio with duration 00:05.684
+2026-06-05 02:00:39,722 [voice_input] Transcribing recorded audio...
+2026-06-05 02:00:39,722 [faster_whisper] Processing audio with duration 00:02.580
+2026-06-05 02:00:52,900 [state_machine] State: IDLE → THINKING
+2026-06-05 02:00:52,901 [brain] Unified stream call for: hii can you give a long paragraph as an output speak about a
+2026-06-05 02:01:01,576 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 02:01:01,604 [brain] Unified stream → CONVERSATIONAL mode detected (plain text)
+2026-06-05 02:01:01,706 [brain] Unified stream → CONVERSATIONAL complete
+2026-06-05 02:01:01,707 [memory_agent] Memory updated: last_interaction
+2026-06-05 02:01:01,707 [state_machine] State: THINKING → IDLE
+2026-06-05 02:01:18,677 [state_machine] State: IDLE → THINKING
+2026-06-05 02:01:18,677 [brain] ReAct step 1/10
+2026-06-05 02:01:19,142 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'mr-meeseeks', 'System Monitor', 'Terminal', '(6) Instagram — Mozilla Firefox', 'last_interaction.json - mr-meeseeks - Visual Studio Code - Modified']}
+2026-06-05 02:01:30,804 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 02:01:30,805 [brain] Raw output: {"name": "alert_user", "arguments": {"message": "A new window has been opened in Visual Studio Code."}}
+2026-06-05 02:01:30,805 [brain] Schema validation failed: Unknown tool 'alert_user'. Known tools: get_ui_elements, list_at_spi_apps, read_element_text, find_element_by_label, click_at, double_click_at, type_text, key_press, scroll, run_bg_cmd, check_battery, get_active_window, list_open_windows, read_notifications, open_visible_terminal, list_memory_keys, update_memory, fetch_memory, simple_scrape, gui_research, speak, done
+2026-06-05 02:01:30,805 [brain] ReAct step 2/10
+2026-06-05 02:01:44,005 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 02:01:44,006 [brain] Raw output: {"name": "alert_user", "arguments": {"message": "Unknown tool 'alert_user'. Known tools: get_ui_elements, list_at_spi_apps, read_element_text, find_element_by_label, click_at, double_click_at, type_text, key_press, scroll, run_bg_cmd, check_battery, get_active_window, list_open_windows, read_notific
+2026-06-05 02:01:44,006 [brain] Schema validation failed: Unknown tool 'alert_user'. Known tools: get_ui_elements, list_at_spi_apps, read_element_text, find_element_by_label, click_at, double_click_at, type_text, key_press, scroll, run_bg_cmd, check_battery, get_active_window, list_open_windows, read_notifications, open_visible_terminal, list_memory_keys, update_memory, fetch_memory, simple_scrape, gui_research, speak, done
+2026-06-05 02:01:44,006 [brain] ReAct step 3/10
+2026-06-05 02:01:50,707 [main] Kernel listener stopped.

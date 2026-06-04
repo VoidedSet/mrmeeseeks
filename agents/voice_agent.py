@@ -16,8 +16,38 @@ _audio_queue = queue.Queue()
 _worker_thread = None
 _kokoro_engine = None
 
+def _preload_cuda_libs():
+    import sys
+    import ctypes
+    if not sys.platform.startswith("linux"):
+        return
+        
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    site_packages = os.path.join(project_root, "venv", "lib", f"python{sys.version_info.major}.{sys.version_info.minor}", "site-packages")
+    
+    # Preload the nvidia package library files if they exist in venv
+    libs_to_load = [
+        ("cublas", "libcublasLt.so.12"),
+        ("cublas", "libcublas.so.12"),
+        ("cudnn", "libcudnn.so.9"),
+    ]
+    
+    for pkg, libname in libs_to_load:
+        lib_path = os.path.join(site_packages, "nvidia", pkg, "lib", libname)
+        if os.path.exists(lib_path):
+            try:
+                # Load with RTLD_GLOBAL so other loaded libraries (like ORT) can resolve these symbols
+                ctypes.CDLL(lib_path, mode=ctypes.RTLD_GLOBAL)
+                log.info(f"Preloaded CUDA library: {libname} ✓")
+            except Exception as ex:
+                log.warning(f"Could not preload library {libname} from {lib_path}: {ex}")
+
+
 def _play_worker():
     global _kokoro_engine
+    
+    # Try preloading any CUDA libraries installed in venv
+    _preload_cuda_libs()
     
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     model_path = os.path.join(project_root, "models", "kokoro-v1.0.int8.onnx")
@@ -28,11 +58,25 @@ def _play_worker():
         import sounddevice as sd
         from kokoro_onnx import Kokoro
         
+        import onnxruntime as ort
+        from onnxruntime import InferenceSession
+        
         if not os.path.exists(model_path) or not os.path.exists(voices_path):
             log.error(f"Kokoro model or voices file not found at {model_path} / {voices_path}")
             return
             
-        _kokoro_engine = Kokoro(model_path, voices_path)
+        # Detect and configure execution providers (GPU / CPU)
+        available = ort.get_available_providers()
+        selected_providers = []
+        if "CUDAExecutionProvider" in available:
+            selected_providers.append("CUDAExecutionProvider")
+            log.info("Kokoro TTS: CUDA detected. Running on GPU ✓")
+        else:
+            log.info("Kokoro TTS: CUDA not detected. Falling back to CPU.")
+        selected_providers.append("CPUExecutionProvider")
+
+        session = InferenceSession(model_path, providers=selected_providers)
+        _kokoro_engine = Kokoro.from_session(session, voices_path)
         log.info("Kokoro TTS engine initialized successfully ✓")
     except Exception as e:
         log.exception(f"Failed to initialize Kokoro TTS engine: {e}")

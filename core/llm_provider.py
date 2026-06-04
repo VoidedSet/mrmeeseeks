@@ -43,6 +43,17 @@ class LLMProvider(ABC):
         force_json: bool = True,
         tools: list[dict] = None,
     ) -> dict:
+        """Send a chat completion request."""
+
+    async def stream_complete(
+        self,
+        system_prompt: str,
+        messages: list[dict],
+        temperature: float = 0.5,
+        max_tokens: int = 512,
+        tools: list[dict] = None,
+    ):
+        """Send a streaming chat completion request."""
         """
         Send a chat completion request.
         force_json=True  → tell the model to output only JSON (for ReAct loop)
@@ -139,6 +150,63 @@ class GroqProvider(LLMProvider):
         log.debug(f"[Groq] raw → {content[:200]}")
         return {"content": content.strip(), "tool_calls": parsed_tools}
 
+    async def stream_complete(
+        self,
+        system_prompt: str,
+        messages: list[dict],
+        temperature: float = 0.5,
+        max_tokens: int = 512,
+        tools: list[dict] = None,
+    ):
+        payload = {
+            "model":       self.model,
+            "messages":    [{"role": "system", "content": system_prompt}] + messages,
+            "temperature": temperature,
+            "max_tokens":  max_tokens,
+            "stream":      True,
+        }
+
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type":  "application/json",
+        }
+
+        async with httpx.AsyncClient(timeout=60) as client:
+            async with client.stream("POST", f"{self.base_url}/chat/completions", json=payload, headers=headers) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if line.startswith("data: "):
+                        data_str = line[6:].strip()
+                        if data_str == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(data_str)
+                            choice = data["choices"][0]
+                            delta = choice.get("delta", {})
+                            content = delta.get("content", "")
+                            if content:
+                                yield {"content": content}
+                            if delta.get("tool_calls"):
+                                for tc in delta["tool_calls"]:
+                                    func = tc.get("function", {})
+                                    args_str = func.get("arguments", "{}")
+                                    try:
+                                        args = json.loads(args_str)
+                                    except Exception:
+                                        args = {}
+                                    yield {
+                                        "tool_calls": [{
+                                            "name": func.get("name"),
+                                            "args": args
+                                        }]
+                                    }
+                        except Exception:
+                            pass
+
 
 # ── Ollama Provider ───────────────────────────────────────────────────────────
 class OllamaProvider(LLMProvider):
@@ -173,7 +241,7 @@ class OllamaProvider(LLMProvider):
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
-                "num_ctx": 16384,
+                "num_ctx": 4096,
             },
         }
 
@@ -203,6 +271,52 @@ class OllamaProvider(LLMProvider):
 
         log.debug(f"[Ollama] raw → {content[:200]}")
         return {"content": content.strip(), "tool_calls": parsed_tools}
+
+    async def stream_complete(
+        self,
+        system_prompt: str,
+        messages: list[dict],
+        temperature: float = 0.5,
+        max_tokens: int = 512,
+        tools: list[dict] = None,
+    ):
+        payload = {
+            "model":    self.model,
+            "messages": [{"role": "system", "content": system_prompt}] + messages,
+            "stream":   True,
+            "options": {
+                "temperature": temperature,
+                "num_predict": max_tokens,
+                "num_ctx": 4096,
+            },
+        }
+
+        if tools:
+            payload["tools"] = tools
+
+        async with httpx.AsyncClient(timeout=60) as client:
+            async with client.stream("POST", self.url, json=payload) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                        message = data.get("message", {})
+                        content = message.get("content", "")
+                        if content:
+                            yield {"content": content}
+                        if message.get("tool_calls"):
+                            parsed_tcs = []
+                            for tc in message["tool_calls"]:
+                                func = tc.get("function", {})
+                                parsed_tcs.append({
+                                    "name": func.get("name"),
+                                    "args": func.get("arguments", {})
+                                })
+                            yield {"tool_calls": parsed_tcs}
+                    except Exception:
+                        pass
 
 
 # ── Factory ───────────────────────────────────────────────────────────────────

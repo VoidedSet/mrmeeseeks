@@ -17,7 +17,7 @@ import re
 import time
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Callable
 
 import httpx
 
@@ -344,6 +344,158 @@ def parse_tool_call(raw: str) -> Optional[dict]:
             continue
 
     return None
+
+
+class SentenceStreamer:
+    def __init__(self, callback):
+        self.callback = callback
+        self.buffer = ""
+        self.delimiters = {".", "?", "!", "\n", ";"}
+
+    def add_chunk(self, chunk: str):
+        self.buffer += chunk
+        while True:
+            earliest_idx = -1
+            for d in self.delimiters:
+                idx = self.buffer.find(d)
+                if idx != -1:
+                    if earliest_idx == -1 or idx < earliest_idx:
+                        earliest_idx = idx
+            
+            if earliest_idx == -1:
+                break
+                
+            sentence = self.buffer[:earliest_idx + 1].strip()
+            self.buffer = self.buffer[earliest_idx + 1:]
+            if sentence:
+                self.callback(sentence)
+                
+    def flush(self):
+        sentence = self.buffer.strip()
+        if sentence:
+            self.callback(sentence)
+        self.buffer = ""
+
+
+async def unified_stream_call(
+    user_input: str,
+    history: ConversationHistory,
+    context: dict,
+    on_text_chunk: Callable[[str], None],
+    on_sentence: Callable[[str], None],
+) -> tuple[Optional[str], Optional[dict]]:
+    """
+    Streams the unified call.
+    Automatically detects if response is agentic (tool call) or conversational (plain text).
+    - If agentic: gathers full response, parses tool call, and returns (None, tool_call).
+    - If conversational: streams content to stdout/voice, and returns (full_text, None).
+    """
+    provider = llm_mod.provider
+    if provider is None:
+        return "LLM provider not initialized.", None
+
+    system_prompt = build_unified_prompt(context)
+    messages = history.messages.copy()
+    messages.append({"role": "user", "content": user_input})
+
+    log.info(f"Unified stream call for: {user_input[:60]}")
+
+    full_content = ""
+    tool_calls_list = []
+    is_agentic = None  # None = undecided, True = tool calling, False = plain text
+    
+    sentence_streamer = SentenceStreamer(on_sentence)
+
+    try:
+        async for chunk in provider.stream_complete(
+            system_prompt=system_prompt,
+            messages=messages,
+            temperature=0.5,
+            max_tokens=300,
+            tools=get_openai_tools()
+        ):
+            # Check if this chunk indicates a tool call
+            if chunk.get("tool_calls"):
+                if is_agentic is None:
+                    is_agentic = True
+                    log.info("Unified stream → AGENTIC mode detected (native tool calls)")
+                tool_calls_list.extend(chunk["tool_calls"])
+            
+            content_chunk = chunk.get("content", "")
+            if content_chunk:
+                full_content += content_chunk
+                
+                # If we haven't decided if it's agentic or not, check for typical JSON/tool-call starts in the text
+                if is_agentic is None:
+                    stripped = full_content.strip()
+                    # If it starts like a JSON object or markdown block, it's likely textual tool call
+                    if stripped.startswith("{") or stripped.startswith("```"):
+                        pass
+                    elif len(stripped) > 10:
+                        # Definitely plain text conversational
+                        is_agentic = False
+                        log.info("Unified stream → CONVERSATIONAL mode detected (plain text)")
+                
+                # If it's conversational, stream text out to callback and sentence buffer
+                if is_agentic == False:
+                    if on_text_chunk:
+                        on_text_chunk(content_chunk)
+                    sentence_streamer.add_chunk(content_chunk)
+
+        # Flush any remaining text in sentence buffer
+        if is_agentic == False:
+            sentence_streamer.flush()
+
+    except Exception as e:
+        log.exception(f"Unified stream LLM call failed: {e}")
+        return f"Sorry, something went wrong: {e}", None
+
+    full_content = full_content.strip()
+
+    # Now let's finalise
+    # 1. Native tool call check
+    if tool_calls_list:
+        tc = tool_calls_list[0]
+        tool_call = {
+            "thought": full_content,
+            "tool": tc.get("name"),
+            "args": tc.get("args", {})
+        }
+        valid, error = validate_tool_call(tool_call)
+        if valid:
+            log.info(f"Unified stream → AGENTIC tool: {tool_call.get('tool')}")
+            return None, tool_call
+        else:
+            log.warning(f"Unified stream tool call invalid: {error}")
+            return None, tool_call
+
+    # 2. Textual tool call check (fallback)
+    tool_call = parse_tool_call(full_content)
+    if tool_call is not None:
+        valid, error = validate_tool_call(tool_call)
+        if valid:
+            log.info(f"Unified stream (text fallback) → AGENTIC tool: {tool_call.get('tool')}")
+            return None, tool_call
+        else:
+            log.warning(f"Unified stream (text fallback) tool call invalid: {error}")
+            return None, tool_call
+
+    # 3. Plain text response
+    log.info("Unified stream → CONVERSATIONAL complete")
+    if full_content.startswith("{"):
+        try:
+            parsed = json.loads(full_content)
+            text = (
+                parsed.get("response")
+                or parsed.get("speech")
+                or parsed.get("args", {}).get("speech")
+                or full_content
+            )
+            return str(text), None
+        except json.JSONDecodeError:
+            pass
+
+    return full_content, None
 
 
 # ── Unified First Call ────────────────────────────────────────────────────────
@@ -721,18 +873,29 @@ class Brain:
         if len(self.kernel_events) > 50:
             self.kernel_events = self.kernel_events[-50:]
 
-    async def process(self, user_input: str) -> str:
+    async def process(
+        self,
+        user_input: str,
+        on_chunk: Callable[[str], None] = None,
+        on_sentence: Callable[[str], None] = None,
+    ) -> str:
         """
-        Main entry point. Unified routing:
-          1. Single lightweight LLM call (unified_first_call)
-          2a. If plain text -> return directly (conversational path, 1 call total)
-          2b. If tool call -> enter react_loop reusing the tool call (agentic path)
+        Main entry point. Unified streaming routing:
+          1. Single lightweight streaming LLM call (unified_stream_call)
+          2a. If plain text -> stream directly to console and TTS
+          2b. If tool call -> enter react_loop (agentic path)
         """
         await self.state_machine.transition(State.THINKING)
 
         context = await build_context(self.memory_agent, self.kernel_events, user_input)
 
-        plain_text, tool_call = await unified_first_call(user_input, self.history, context)
+        plain_text, tool_call = await unified_stream_call(
+            user_input=user_input,
+            history=self.history,
+            context=context,
+            on_text_chunk=on_chunk,
+            on_sentence=on_sentence,
+        )
 
         if plain_text is not None:
             # Conversational: model replied in plain text — done
@@ -748,6 +911,13 @@ class Brain:
                 context=context,
                 first_tool_call=tool_call,
             )
+            # Since react loop was not streamed, print/speak final response now
+            if speech:
+                if on_chunk:
+                    on_chunk(speech + "\n")
+                if on_sentence:
+                    on_sentence(speech)
+
             self.last_interaction = {
                 "input": user_input,
                 "context": {

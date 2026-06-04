@@ -47,6 +47,17 @@ logging.getLogger().addHandler(_fh)
 log.info(f"Logging to logs/outputs/run_{_ts}.txt")
 
 
+import concurrent.futures
+_input_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
+def _blocking_input(prompt: str) -> str:
+    return input(prompt)
+
+async def async_input(prompt: str) -> str:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(_input_executor, _blocking_input, prompt)
+
+
 async def main():
     # ── Init LLM provider ────────────────────────────────────────────────────
     from core.llm_provider import init_provider
@@ -105,7 +116,7 @@ async def main():
         while True:
             used_voice = False
             try:
-                user_input = input("You (Press Enter to speak, or type): ").strip()
+                user_input = (await async_input("You (Press Enter to speak, or type): ")).strip()
             except (EOFError, KeyboardInterrupt):
                 print("\n[Meeseeks] Goodbye.")
                 break
@@ -124,19 +135,33 @@ async def main():
 
             print("[Meeseeks] Thinking...", flush=True)
 
-            try:
-                response = await brain.process(user_input)
-                print(f"\n[Meeseeks] {response}\n")
-                
+            header_printed = False
+
+            def on_chunk(chunk: str):
+                nonlocal header_printed
+                if not header_printed:
+                    print("\n[Meeseeks] ", end="", flush=True)
+                    header_printed = True
+                print(chunk, end="", flush=True)
+
+            def on_sentence(sentence: str):
                 if used_voice:
                     from core.ipc_bus import bus
-                    await bus.dispatch("speak", {"text": response})
+                    asyncio.create_task(bus.dispatch("speak", {"text": sentence}))
+
+            try:
+                response = await brain.process(
+                    user_input,
+                    on_chunk=on_chunk,
+                    on_sentence=on_sentence
+                )
+                print()
                 
                 # Feedback loop
                 if brain.last_interaction:
-                    ans = input("Did it fulfill the request? (y/n) [y]: ").strip().lower()
+                    ans = (await async_input("Did it fulfill the request? (y/n) [y]: ")).strip().lower()
                     user_success = ans != 'n'
-                    score_str = input("Quality score (1-5) [5]: ").strip()
+                    score_str = (await async_input("Quality score (1-5) [5]: ")).strip()
                     try:
                         score = int(score_str) if score_str else 5
                     except ValueError:

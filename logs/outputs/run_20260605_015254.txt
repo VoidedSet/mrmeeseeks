@@ -1,0 +1,100 @@
+2026-06-05 01:52:54,599 [main] Logging to logs/outputs/run_20260605_015254.txt
+2026-06-05 01:52:54,673 [llm_provider] [Ollama] model=qwen2.5-coder:1.5b url=http://localhost:11434/api/chat
+2026-06-05 01:52:54,673 [llm_provider] LLM provider initialized: ollama/qwen2.5-coder:1.5b
+2026-06-05 01:52:54,673 [main] LLM backend: ollama/qwen2.5-coder:1.5b
+2026-06-05 01:52:54,676 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-05 01:52:54,676 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-05 01:52:54,676 [ipc_bus] Registered handler: check_battery
+2026-06-05 01:52:54,676 [ipc_bus] Registered handler: get_active_window
+2026-06-05 01:52:54,676 [ipc_bus] Registered handler: list_open_windows
+2026-06-05 01:52:54,676 [ipc_bus] Registered handler: read_notifications
+2026-06-05 01:52:54,676 [sysadmin] SysAdmin agent registered ✓
+2026-06-05 01:52:54,677 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-05 01:52:54,677 [ipc_bus] Registered handler: list_memory_keys
+2026-06-05 01:52:54,677 [ipc_bus] Registered handler: update_memory
+2026-06-05 01:52:54,677 [ipc_bus] Registered handler: fetch_memory
+2026-06-05 01:52:54,677 [memory_agent] Memory agent registered ✓
+2026-06-05 01:52:54,738 [ipc_bus] Registered handler: simple_scrape
+2026-06-05 01:52:54,739 [ipc_bus] Registered handler: gui_research
+2026-06-05 01:52:54,739 [web_agent] Web agent registered ✓
+2026-06-05 01:52:54,790 [ipc_bus] Registered handler: click_at
+2026-06-05 01:52:54,790 [ipc_bus] Registered handler: double_click_at
+2026-06-05 01:52:54,790 [ipc_bus] Registered handler: type_text
+2026-06-05 01:52:54,790 [ipc_bus] Registered handler: key_press
+2026-06-05 01:52:54,790 [ipc_bus] Registered handler: scroll
+2026-06-05 01:52:54,790 [hands_agent] Hands agent registered ✓
+2026-06-05 01:52:54,811 [ipc_bus] Registered handler: get_ui_elements
+2026-06-05 01:52:54,811 [ipc_bus] Registered handler: read_element_text
+2026-06-05 01:52:54,811 [ipc_bus] Registered handler: find_element_by_label
+2026-06-05 01:52:54,811 [ipc_bus] Registered handler: list_at_spi_apps
+2026-06-05 01:52:54,811 [eyes_agent] Eyes agent registered ✓
+2026-06-05 01:52:54,812 [ipc_bus] Registered handler: speak
+2026-06-05 01:52:54,812 [voice_agent] Initializing Kokoro TTS engine from /home/kshayik/Projects/mr-meeseeks/models/kokoro-v1.0.int8.onnx...
+2026-06-05 01:52:54,813 [voice_agent] Voice agent registered ✓
+2026-06-05 01:52:54,815 [main] Kernel listener started ✓
+2026-06-05 01:52:55,292 [voice_agent] Kokoro TTS: CUDA detected. Running on GPU ✓
+2026-06-05 01:52:55,866 [voice_agent] Kokoro TTS engine initialized successfully ✓
+2026-06-05 01:52:59,253 [voice_input] Loading Whisper model (tiny.en, CPU, int8)...
+2026-06-05 01:52:59,964 [httpx] HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-tiny.en/revision/main "HTTP/1.1 200 OK"
+2026-06-05 01:53:00,176 [voice_input] Whisper model loaded successfully ✓
+2026-06-05 01:53:00,211 [voice_input] Audio recording too short, ignoring.
+2026-06-05 01:53:05,641 [voice_input] Transcribing recorded audio...
+2026-06-05 01:53:05,642 [faster_whisper] Processing audio with duration 00:02.475
+2026-06-05 01:53:06,027 [state_machine] State: IDLE → THINKING
+2026-06-05 01:53:06,045 [brain] Unified stream call for: Hello.
+2026-06-05 01:53:06,063 [kernel] Kernel listener starting...
+2026-06-05 01:53:06,126 [kernel] Kernel state warm: window='kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks', 6 windows, battery=100%, 6 apps bridged
+2026-06-05 01:53:11,749 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:53:12,032 [brain] Unified stream (text fallback) → AGENTIC tool: get_active_window
+2026-06-05 01:53:12,032 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-05 01:53:12,033 [brain] Dispatching → get_active_window({})
+2026-06-05 01:53:12,036 [brain] Result: {'window': 'kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks'}
+2026-06-05 01:53:12,036 [brain] ReAct step 2/10
+2026-06-05 01:53:16,588 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-05 01:53:19,002 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks'}
+2026-06-05 01:53:23,831 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-05 01:53:24,636 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Terminal'}
+2026-06-05 01:53:25,334 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:53:25,335 [brain] Raw output: {"thought": "Got active window information.", "tool": "done", "args": {"speech": "The current active window is kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks."}}
+2026-06-05 01:53:25,335 [brain] Thought: Got active window information.
+2026-06-05 01:53:25,335 [brain] ReAct done. Speech: The current active window is kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks.
+2026-06-05 01:53:25,343 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:53:25,344 [state_machine] State: THINKING → IDLE
+2026-06-05 01:53:36,440 [brain] Saved finetune sample.
+2026-06-05 01:53:53,446 [voice_input] Transcribing recorded audio...
+2026-06-05 01:53:53,446 [faster_whisper] Processing audio with duration 00:02.217
+2026-06-05 01:53:53,776 [state_machine] State: IDLE → THINKING
+2026-06-05 01:53:53,776 [brain] Unified stream call for: Hello
+2026-06-05 01:53:53,792 [voice_agent] Queuing speak request: 'The current active window is kshayik@kshayiks-hp-victus: ~/P...'
+2026-06-05 01:53:53,793 [voice_agent] Synthesizing speech: 'The current active window is kshayik@kshayiks-hp-victus: ~/P...'
+2026-06-05 01:53:53,805 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks'}
+2026-06-05 01:53:53,836 [phonemizer] words count mismatch on 200.0% of the lines (2/1)
+2026-06-05 01:53:53,914 [brain] Proactive event queued (busy): {'type': 'windows_changed', 'windows': ['plank', 'Desktop Icons 1', 'what is this project?', 'kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks', 'mr-meeseeks', 'System Monitor', 'Terminal']}
+2026-06-05 01:54:00,895 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:54:01,333 [brain] Unified stream (text fallback) → AGENTIC tool: get_active_window
+2026-06-05 01:54:01,334 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-05 01:54:01,334 [brain] Dispatching → get_active_window({})
+2026-06-05 01:54:01,341 [brain] Result: {'window': 'kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks'}
+2026-06-05 01:54:01,341 [brain] ReAct step 2/10
+2026-06-05 01:54:05,099 [voice_agent] Playing synthesized audio...
+2026-06-05 01:54:15,690 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:54:15,691 [brain] Raw output: {"thought": "Got active window information.", "tool": "done", "args": {"speech": "The current active window is kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks."}}
+2026-06-05 01:54:15,691 [brain] Thought: Got active window information.
+2026-06-05 01:54:15,691 [brain] ReAct done. Speech: The current active window is kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks.
+2026-06-05 01:54:15,691 [memory_agent] Memory updated: last_interaction
+2026-06-05 01:54:15,692 [state_machine] State: THINKING → IDLE
+2026-06-05 01:54:21,307 [brain] Saved finetune sample.
+2026-06-05 01:54:27,902 [voice_input] Transcribing recorded audio...
+2026-06-05 01:54:27,902 [faster_whisper] Processing audio with duration 00:03.444
+2026-06-05 01:54:28,230 [state_machine] State: IDLE → THINKING
+2026-06-05 01:54:28,231 [brain] Unified stream call for: What can you do?
+2026-06-05 01:54:28,247 [voice_agent] Queuing speak request: 'The current active window is kshayik@kshayiks-hp-victus: ~/P...'
+2026-06-05 01:54:28,248 [voice_agent] Synthesizing speech: 'The current active window is kshayik@kshayiks-hp-victus: ~/P...'
+2026-06-05 01:54:28,249 [phonemizer] words count mismatch on 200.0% of the lines (2/1)
+2026-06-05 01:54:35,758 [httpx] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-06-05 01:54:36,183 [brain] Unified stream (text fallback) → AGENTIC tool: get_active_window
+2026-06-05 01:54:36,183 [brain] ReAct step 1/10 (pre-parsed from unified call)
+2026-06-05 01:54:36,183 [brain] Dispatching → get_active_window({})
+2026-06-05 01:54:36,187 [brain] Result: {'window': 'kshayik@kshayiks-hp-victus: ~/Projects/mr-meeseeks'}
+2026-06-05 01:54:36,188 [brain] ReAct step 2/10
+2026-06-05 01:54:39,557 [main] Kernel listener stopped.
