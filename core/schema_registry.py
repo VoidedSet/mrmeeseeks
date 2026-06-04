@@ -35,25 +35,32 @@ TOOL_SCHEMAS = {
     },
 
     # ── Hands ──
-    "move_mouse": {
-        "description": "Move AI cursor to x,y. Use get_ui_elements first to find coords.",
+    "click_at": {
+        "description": (
+            "Move cursor to (x, y) and click. ALWAYS use this instead of separate move+click. "
+            "Get coords from get_ui_elements first. btn defaults to 'left'."
+        ),
+        "args": {
+            "x":   "int — screen x coordinate (from get_ui_elements)",
+            "y":   "int — screen y coordinate (from get_ui_elements)",
+            "btn": "string (optional, default 'left') — left|right|middle",
+        }
+    },
+    "double_click_at": {
+        "description": "Move cursor to (x, y) and double-click.",
         "args": {"x": "int", "y": "int"}
     },
-    "click": {
-        "description": "Click at current cursor position. btn: left|right|middle.",
-        "args": {"btn": "string — left|right|middle", "action": "string — click|double|hold|release"}
-    },
     "type_text": {
-        "description": "Type text via physical keystrokes.",
+        "description": "Type text at current focus. Supports Unicode.",
         "args": {"text": "string"}
     },
     "key_press": {
-        "description": "Press a keyboard shortcut. e.g. ctrl+c, ctrl+z, Return.",
+        "description": "Press a keyboard shortcut. e.g. ctrl+c, ctrl+z, Return, ctrl+alt+t.",
         "args": {"keys": "string — key combo e.g. ctrl+s"}
     },
     "scroll": {
         "description": "Scroll at current cursor position.",
-        "args": {"direction": "string — up|down", "amount": "int — number of scroll steps"}
+        "args": {"direction": "string — up|down", "amount": "int — scroll steps (default 3)"}
     },
 
     # ── SysAdmin — silent read only ──
@@ -80,7 +87,7 @@ TOOL_SCHEMAS = {
 
     # ── SysAdmin — visible terminal ──
     "open_visible_terminal": {
-        "description": "Open a real gnome-terminal and type a command. User watches and can kill. Use for ANY write/install/execute command.",
+        "description": "Open a visible terminal for the user. USE ONLY when the user asks to launch a GUI app, open a URL explicitly, or run a dangerous command. Do NOT use this for background web searches or info fetching.",
         "args": {"cmd": "string — command to execute visibly"}
     },
 
@@ -100,8 +107,8 @@ TOOL_SCHEMAS = {
 
     # ── Web ──
     "simple_scrape": {
-        "description": "Fast background web search. Returns summary of results.",
-        "args": {"query": "string"}
+        "description": "Fast silent background web search. USE THIS ALWAYS when asked to find latest news, info, or search the web.",
+        "args": {"query": "string — what to search for"}
     },
     "gui_research": {
         "description": "Open browser, physically navigate, read results interactively. Slow but powerful.",
@@ -127,11 +134,11 @@ REQUIRED_ARGS: dict[str, list[str]] = {
     "list_at_spi_apps":     [],
     "read_element_text":    ["id"],
     "find_element_by_label":["label"],
-    "move_mouse":           ["x", "y"],
-    "click":                ["btn", "action"],
+    "click_at":             ["x", "y"],
+    "double_click_at":      ["x", "y"],
     "type_text":            ["text"],
     "key_press":            ["keys"],
-    "scroll":               ["direction", "amount"],
+    "scroll":               [],
     "run_bg_cmd":           ["cmd"],
     "check_battery":        [],
     "get_active_window":    [],

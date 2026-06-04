@@ -32,8 +32,8 @@ log = logging.getLogger("brain")
 
 # ── Config ───────────────────────────────────────────────────────────────────
 MAX_REACT_STEPS = 10
-TOKEN_LIMIT     = 4000
-COMPRESS_EVERY  = 15 * 60  # seconds
+TOKEN_LIMIT     = 3000
+COMPRESS_EVERY_TURNS = 16  # 8 user turns
 
 # ── JSON parse retry hint ─────────────────────────────────────────────────────
 _RETRY_HINT = (
@@ -141,15 +141,18 @@ def build_system_prompt(context: dict) -> str:
         "\n"
         "=== TOOL USAGE RULES ===\n"
         "run_bg_cmd:\n"
-        "  USE for ALL read-only ops: head, cat, grep, ls, find, ps, df, free, wmctrl, etc.\n"
-        '  Read file: {"tool": "run_bg_cmd", "args": {"cmd": "head -n 20 /path/to/file"}}\n'
-        "  DO NOT use for write/install/execute operations.\n"
+        "  USE THIS to run ANY terminal command to get its output (e.g., cat, grep, ls, python scripts).\n"
+        '  {"tool": "run_bg_cmd", "args": {"cmd": "uname -a"}}\n'
         "\n"
         "open_visible_terminal:\n"
-        "  USE ONLY for commands that modify the system or launch GUI apps.\n"
-        '  Open URL: {"tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://..."}}\n'
-        "  DO NOT use for read-only commands.\n"
+        "  USE ONLY when the user explicitly asks to open a terminal or launch a GUI app.\n"
+        '  Open app: {"tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://..."}}\n'
+        "  DO NOT use for read-only commands or web searches.\n"
         "  DO NOT invent commands that don't exist (e.g. xdg-query does not exist).\n"
+        "\n"
+        "simple_scrape:\n"
+        "  USE THIS silently in the background whenever you need to search the web for latest knowledge or news.\n"
+        '  {"tool": "simple_scrape", "args": {"query": "latest nvidia news"}}\n'
         "\n"
         "list_open_windows:\n"
         "  USE THIS (not get_active_window) when user asks for ALL windows.\n"
@@ -202,8 +205,18 @@ def build_system_prompt(context: dict) -> str:
         '-> {"thought": "head is read-only, use run_bg_cmd.", "tool": "run_bg_cmd", "args": {"cmd": "head -n 10 /home/user/file.txt"}}\n'
         '   (gets output) -> {"thought": "Got file contents.", "tool": "done", "args": {"speech": "The file starts with: ..."}}\n'
         "\n"
+        'User: "click on File menu in VS Code"\n'
+        '-> {"thought": "Need to find coords of File menu first.", "tool": "get_ui_elements", "args": {"app": "code"}}\n'
+        '   (gets result with File at x=50, y=30)\n'
+        '-> {"thought": "Clicking at 50, 30.", "tool": "click_at", "args": {"x": 50, "y": 30}}\n'
+        '   (gets result) -> {"thought": "Clicked successfully.", "tool": "done", "args": {"speech": "I clicked the File menu."}}\n'
+        "\n"
         'User: "open youtube"\n'
-        '-> {"thought": "xdg-open launches browser.", "tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://youtube.com"}}\n'
+        '-> {"thought": "User wants to open a GUI app, use open_visible_terminal.", "tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://youtube.com"}}\n'
+        "\n"
+        'User: "what is the latest news about NVIDIA?"\n'
+        '-> {"thought": "I need to search the web for recent info.", "tool": "simple_scrape", "args": {"query": "latest NVIDIA news"}}\n'
+        '   (gets result) -> {"thought": "Got the news.", "tool": "done", "args": {"speech": "Here is the latest news..."}}\n'
         "\n"
         'User: "what is my city?"\n'
         '-> {"thought": "Not sure of key, list memory keys first.", "tool": "list_memory_keys", "args": {}}\n'
@@ -227,9 +240,10 @@ class ConversationHistory:
         return total // 4
 
     def needs_compression(self) -> bool:
-        time_elapsed = (time.time() - self._last_compress_time) > COMPRESS_EVERY
+        # Check based on message count/tokens; do not gate by time
+        turns_heavy  = len(self.messages) > COMPRESS_EVERY_TURNS
         token_heavy  = self.token_estimate() > TOKEN_LIMIT
-        return time_elapsed or token_heavy
+        return turns_heavy or token_heavy
 
     async def compress(self):
         """Summarize conversation → save raw log → wipe to summary only."""
@@ -422,10 +436,7 @@ async def react_loop(
     """
     provider = llm_mod.provider
     if provider is None:
-        return "LLM provider not initialized. Call init_provider() first."
-
-    if history.needs_compression():
-        await history.compress()
+        return "LLM provider not initialized. Call init_provider() first.", [], False
 
     history.add("user", user_input)
 
@@ -438,9 +449,11 @@ async def react_loop(
     # action_key -> number of times dispatched
     seen_actions: dict[str, int] = {}
     force_done = False  # hard abort: exits loop cleanly without extra LLM call
+    all_tool_calls = []
 
     # ── Optionally inject the pre-parsed first tool call ─────────────────────
     if first_tool_call is not None:
+        all_tool_calls.append(first_tool_call)
         steps += 1
         log.info(f"ReAct step {steps}/{MAX_REACT_STEPS} (pre-parsed from unified call)")
 
@@ -464,7 +477,7 @@ async def react_loop(
             speech = tool_args.get("speech", "Done.")
             history.add("assistant", json.dumps(first_tool_call))
             log.info(f"ReAct done (immediate). Speech: {speech}")
-            return speech
+            return speech, all_tool_calls, True
         else:
             action_key = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}"
             seen_actions[action_key] = 1
@@ -489,7 +502,7 @@ async def react_loop(
         # Hard abort: repeated action fired 3x — skip LLM call, return immediately
         if force_done:
             log.warning("Force-done: aborting after repeated action")
-            return "I got stuck repeating the same action and couldn't finish. Please try rephrasing."
+            return "I got stuck repeating the same action and couldn't finish. Please try rephrasing.", all_tool_calls, False
 
         messages = history.messages.copy()
         if observations:
@@ -507,11 +520,11 @@ async def react_loop(
         except httpx.HTTPStatusError as e:
             log.error(f"LLM HTTP error: {e.response.status_code}")
             if e.response.status_code == 429:
-                return "I'm being rate-limited. Try again in a moment."
-            return f"LLM call failed: {e.response.status_code}"
+                return "I'm being rate-limited. Try again in a moment.", all_tool_calls, False
+            return f"LLM call failed: {e.response.status_code}", all_tool_calls, False
         except Exception as e:
             log.error(f"LLM call failed: {e}")
-            return f"Sorry, I couldn't reach the LLM backend: {e}"
+            return f"Sorry, I couldn't reach the LLM backend: {e}", all_tool_calls, False
 
         log.info(f"Raw output: {raw_output[:300]}")
 
@@ -523,7 +536,7 @@ async def react_loop(
             log.warning(f"Parse failure {parse_failures}/{MAX_PARSE_FAIL}: {raw_output[:200]}")
             if parse_failures >= MAX_PARSE_FAIL:
                 log.error("Too many parse failures. Aborting.")
-                return "I kept producing malformed responses. Please try rephrasing."
+                return "I kept producing malformed responses. Please try rephrasing.", all_tool_calls, False
             observations.append(_RETRY_HINT)
             continue
         else:
@@ -546,12 +559,15 @@ async def react_loop(
         if thought:
             log.info(f"Thought: {thought}")
 
-        # ── DONE ─────────────────────────────────────────────────────────────
         if tool_name == "done":
+            all_tool_calls.append(tool_call)
             speech = tool_args.get("speech", "Done.")
             history.add("assistant", raw_output)
             log.info(f"ReAct done. Speech: {speech}")
-            return speech
+            return speech, all_tool_calls, True
+
+        if tool_name not in ("done",):
+            all_tool_calls.append(tool_call)
 
         # ── Repeated action detection ─────────────────────────────────────────
         action_key = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}"
@@ -587,7 +603,7 @@ async def react_loop(
         history.add("user", f"[Tool result from {tool_name}]: {result_str}")
 
     log.warning("Hit MAX_REACT_STEPS — forcing done")
-    return "I ran out of steps. The task may require tools I don't have yet."
+    return "I ran out of steps. The task may require tools I don't have yet.", all_tool_calls, False
 
 
 # ── Context Builder ───────────────────────────────────────────────────────────
@@ -669,6 +685,7 @@ class Brain:
         self.state_machine = StateMachine()
         self.kernel_events: list = []
         self.memory_agent  = None
+        self.last_interaction: Optional[dict] = None
 
     def inject_memory_agent(self, agent):
         self.memory_agent = agent
@@ -696,14 +713,26 @@ class Brain:
             self.history.add("user", user_input)
             self.history.add("assistant", plain_text)
             speech = plain_text
+            self.last_interaction = None
         else:
             # Agentic: model emitted a tool call — enter ReAct loop
-            speech = await react_loop(
+            speech, tool_calls, success = await react_loop(
                 user_input=user_input,
                 history=self.history,
                 context=context,
                 first_tool_call=tool_call,
             )
+            self.last_interaction = {
+                "input": user_input,
+                "context": {
+                    "active_window": context.get("active_window"),
+                    "battery": context.get("battery", {}).get("level"),
+                    "time": context.get("time"),
+                },
+                "tool_calls": tool_calls,
+                "success": success,
+                "timestamp": datetime.now().isoformat()
+            }
 
         if self.memory_agent:
             await self.memory_agent.update_memory(
@@ -715,8 +744,31 @@ class Brain:
                 }
             )
 
+        if self.history.needs_compression():
+            await self.history.compress()
+
         await self.state_machine.transition(State.IDLE)
         return speech
+
+    def log_finetune_sample(self, user_success: bool, score: int):
+        if not self.last_interaction:
+            return
+        
+        # Merge system success (did it complete loop) with user success (did it do what they wanted)
+        self.last_interaction["system_success"] = self.last_interaction["success"]
+        self.last_interaction["user_success"] = user_success
+        self.last_interaction["score"] = score
+        self.last_interaction["success"] = self.last_interaction["system_success"] and user_success
+        
+        try:
+            os.makedirs("logs/finetune", exist_ok=True)
+            with open("logs/finetune/dataset.jsonl", "a") as f:
+                f.write(json.dumps(self.last_interaction) + "\n")
+            log.info("Saved finetune sample.")
+        except Exception as e:
+            log.warning(f"Failed to save finetune sample: {e}")
+        
+        self.last_interaction = None
 
     async def handle_proactive_event(self, event: dict):
         """Called by kernel listeners for proactive alerts."""
@@ -735,7 +787,7 @@ class Brain:
         await self.state_machine.transition(State.THINKING)
         context = await build_context(self.memory_agent, self.kernel_events)
 
-        speech = await react_loop(
+        speech, _, _ = await react_loop(
             user_input=event_prompt,
             history=ConversationHistory(),  # fresh context — don't pollute main history
             context=context,

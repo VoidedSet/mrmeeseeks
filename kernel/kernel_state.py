@@ -30,10 +30,12 @@ class KernelState:
         self.active_window: str        = "unknown"
         self.open_windows:  list[str]  = []
         self.battery:       dict       = {"level": "unknown", "status": "unknown"}
+        self.app_bridge:    dict       = {}  # proc_name → {atspi, windows, accessible}
         self.last_updated:  dict[str, float] = {
             "active_window": 0.0,
             "open_windows":  0.0,
             "battery":       0.0,
+            "app_bridge":    0.0,
         }
 
     # ── Setters ───────────────────────────────────────────────────────────────
@@ -51,6 +53,14 @@ class KernelState:
         if titles != self.open_windows:
             self.open_windows = titles
             self.last_updated["open_windows"] = time.time()
+            return True
+        return False
+
+    def set_app_bridge(self, table: dict) -> bool:
+        """Returns True if table changed."""
+        if table != self.app_bridge:
+            self.app_bridge = table
+            self.last_updated["app_bridge"] = time.time()
             return True
         return False
 

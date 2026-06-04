@@ -2,18 +2,15 @@
 eyes_agent.py — Mr Meeseeks Eyes Agent
 Uses AT-SPI2 to read accessibility tree on Linux desktop.
 
-Collection strategy:
-  - Walks tree using queryAction() to find TRULY interactive elements (like your test script)
-  - Matches apps by process name (e.g. "firefox", "code") not display title
-  - Filters to named elements only, deduplicates by name+role
-  - Region filter applied on coords (only for elements that have valid coords)
-  - Hard cap of 40 elements before sending to model, grouped by role category
+App resolution (in order):
+  1. app_bridge.resolve(query) — PID-based bridge handles aliases, fuzzy names, window titles
+  2. Direct AT-SPI name fallback if bridge not yet warmed
 
-Known AT-SPI app name mappings:
-  Firefox       → "Firefox" (Wayland) or "firefox" or "Mozilla Firefox"
-  VS Code       → "code"
-  GNOME Shell   → "gnome-shell"
-  Terminal      → "gnome-terminal-server" or "Terminal"
+Default behavior (no args):
+  - Scans top bar (gnome-shell, y < 55) + currently active app
+  - This matches exactly what the user physically sees on screen
+
+Region filter: {x1, y1, x2, y2} — elements must have center coords within box
 """
 import logging
 from core.ipc_bus import bus
@@ -26,29 +23,23 @@ try:
 except ImportError:
     HAS_PYATSPI = False
 
-# Off-screen sentinel value from pyatspi
 _OFFSCREEN = -3221225472
 
-# Role categories for grouping output
 _ROLE_CATEGORY = {
-    # Controls
     "push button":    "buttons",
     "toggle button":  "buttons",
     "check box":      "buttons",
     "radio button":   "buttons",
-    # Navigation
     "menu item":      "menu",
     "menu":           "menu",
     "menu bar":       "menu",
     "page tab":       "tabs",
     "page tab list":  "tabs",
-    # Input
     "entry":          "inputs",
     "password text":  "inputs",
     "combo box":      "inputs",
     "spin box":       "inputs",
     "text":           "inputs",
-    # Content
     "link":           "links",
     "heading":        "content",
     "label":          "content",
@@ -61,8 +52,8 @@ _ROLE_CATEGORY = {
 }
 
 
-def _get_coords(node) -> tuple[int, int] | None:
-    """Try to get valid center coordinates for a node. Returns None if off-screen."""
+def _get_coords(node):
+    """Returns (cx, cy) or None if off-screen/no geometry."""
     try:
         ext = node.get_extents(pyatspi.DESKTOP_COORDS)
         if (ext.x == _OFFSCREEN or ext.y == _OFFSCREEN
@@ -74,7 +65,6 @@ def _get_coords(node) -> tuple[int, int] | None:
 
 
 def _is_interactive(node) -> bool:
-    """Check if a node has at least one action via queryAction()."""
     try:
         action = node.queryAction()
         return action is not None and action.nActions > 0
@@ -82,42 +72,29 @@ def _is_interactive(node) -> bool:
         return False
 
 
-def _collect_from_app(app_node, region: dict | None, results: list, seen_names: set, cap: int):
-    """
-    Walk the subtree of a single app node.
-    Collects interactive, named elements respecting region + dedup + cap.
-    """
+def _collect_from_app(app_node, region, results, seen, cap):
     if app_node is None or len(results) >= cap:
         return
-
     try:
         role = app_node.getRoleName()
         name = (app_node.name or "").strip()
 
-        # Skip unnamed unless it's a known structural role
         if name and name != "[Unnamed]" and _is_interactive(app_node):
             coords = _get_coords(app_node)
-
-            # Region filter — only apply if region given AND we have valid coords
             in_region = True
             if region and coords:
                 cx, cy = coords
                 in_region = (region["x1"] <= cx <= region["x2"]
                              and region["y1"] <= cy <= region["y2"])
             elif region and coords is None:
-                # No valid coords — skip when region filter is active
                 in_region = False
 
             if in_region:
-                dedup_key = f"{role}::{name}"
-                if dedup_key not in seen_names:
-                    seen_names.add(dedup_key)
-                    entry = {
-                        "id":   str(len(results)),
-                        "name": name,
-                        "role": role,
-                        "cat":  _ROLE_CATEGORY.get(role, "other"),
-                    }
+                key = f"{role}::{name}"
+                if key not in seen:
+                    seen.add(key)
+                    entry = {"id": str(len(results)), "name": name, "role": role,
+                             "cat": _ROLE_CATEGORY.get(role, "other")}
                     if coords:
                         entry["x"] = coords[0]
                         entry["y"] = coords[1]
@@ -125,25 +102,39 @@ def _collect_from_app(app_node, region: dict | None, results: list, seen_names: 
 
         if len(results) < cap:
             for i in range(app_node.getChildCount()):
-                child = app_node.getChildAtIndex(i)
-                _collect_from_app(child, region, results, seen_names, cap)
+                _collect_from_app(app_node.getChildAtIndex(i), region, results, seen, cap)
                 if len(results) >= cap:
                     break
-
     except Exception:
         pass
 
 
-def _find_apps(desktop, app_query: str | None) -> list:
+def _resolve_app(query: str):
     """
-    Find matching app nodes from the desktop.
-    app_query: case-insensitive substring to match against app.name.
-    Returns list of matching pyatspi app nodes.
-    If app_query is None, returns the active/focused app only.
+    Returns list of pyatspi app nodes matching the query.
+    Uses app_bridge first, falls back to direct AT-SPI scan.
     """
-    if desktop is None:
-        return []
+    try:
+        desktop = pyatspi.Registry.getDesktop(0)
+    except Exception:
+        return [], None
 
+    # Try app_bridge resolution
+    try:
+        from kernel.app_bridge import bridge
+        from kernel.kernel_state import state as kstate
+        # Use live bridge if available
+        if kstate.app_bridge:
+            atspi_name, err = bridge.resolve(query)
+            if err:
+                return [], err
+            if atspi_name:
+                query = atspi_name  # use the resolved AT-SPI name
+    except Exception:
+        pass
+
+    # Scan desktop for matching app nodes
+    q = query.lower()
     matches = []
     try:
         for app in desktop:
@@ -151,27 +142,20 @@ def _find_apps(desktop, app_query: str | None) -> list:
                 continue
             try:
                 name = (app.name or "").lower()
-                if app_query:
-                    # Fuzzy match: query is substring of app name OR vice versa
-                    q = app_query.lower()
-                    if q in name or name in q:
-                        matches.append(app)
-                else:
-                    # No filter → include all apps (will be capped later)
+                if q in name or name in q:
                     matches.append(app)
             except Exception:
                 continue
     except Exception:
         pass
 
-    return matches
+    if not matches:
+        return [], f"No app matching '{query}' found on AT-SPI bus. Try list_at_spi_apps to see registered names."
+
+    return matches, None
 
 
-def _summarize(elements: list) -> dict:
-    """
-    Group elements by role category for compact model output.
-    Returns: {by_cat: {cat: [{id, name, role, x?, y?}]}, total: int}
-    """
+def _summarize(elements) -> dict:
     by_cat: dict[str, list] = {}
     for el in elements:
         cat = el.get("cat", "other")
@@ -181,24 +165,18 @@ def _summarize(elements: list) -> dict:
             entry["x"] = el["x"]
             entry["y"] = el["y"]
         by_cat[cat].append(entry)
-
     return {"by_cat": by_cat, "total": len(elements)}
 
 
 async def handle_get_ui_elements(args: dict) -> dict:
     """
-    Get visible/interactive UI elements on screen.
+    Get interactive UI elements on screen.
 
     Args (all optional):
-        app    : str  — app name to filter (fuzzy match, e.g. "firefox", "code", "VS Code")
-                        If omitted, scans the currently focused app.
+        app    : str  — app name (fuzzy: "Firefox", "VS Code", "code", etc.)
         region : dict — {x1, y1, x2, y2} screen bounding box in pixels
-                        e.g. {"x1": 0, "y1": 0, "x2": 1920, "y2": 50} for top bar
 
-    Returns:
-        {by_cat: {category: [{id, name, role, x?, y?}]}, total: int, scanned_apps: [...]}
-
-    Categories: buttons, menu, tabs, inputs, links, content, other
+    No args → auto-scope: top bar (gnome-shell) + currently active app.
     """
     if not HAS_PYATSPI:
         return {"error": "pyatspi not installed. Run: sudo apt install python3-pyatspi"}
@@ -208,7 +186,7 @@ async def handle_get_ui_elements(args: dict) -> dict:
 
     if region_filter is not None:
         if not isinstance(region_filter, dict):
-            return {"error": "region must be an object: {x1, y1, x2, y2}"}
+            return {"error": "region must be {x1, y1, x2, y2}"}
         for k in ("x1", "y1", "x2", "y2"):
             if k not in region_filter:
                 return {"error": f"region missing key '{k}'"}
@@ -218,59 +196,97 @@ async def handle_get_ui_elements(args: dict) -> dict:
     except Exception as e:
         return {"error": f"Cannot connect to AT-SPI: {e}"}
 
-    apps = _find_apps(desktop, app_filter)
-    if not apps:
-        return {
-            "by_cat":      {},
-            "total":       0,
-            "scanned_apps": [],
-            "note": (
-                f"No app matching '{app_filter}' found on AT-SPI bus. "
-                "Common names: 'code' (VS Code), 'firefox', 'gnome-terminal-server'. "
-                "The app must have accessibility enabled."
-            )
-        }
+    results:  list = []
+    seen:     set  = set()
+    CAP = 40
 
-    results   = []
-    seen_names: set[str] = set()
-    CAP = 40  # max elements to return
+    # ── Mode A: specific app requested ───────────────────────────────────────
+    if app_filter:
+        apps, err = _resolve_app(app_filter)
+        if err:
+            return {"error": err, "tip": "Enable accessibility: gsettings set org.gnome.desktop.interface toolkit-accessibility true"}
+        for app in apps:
+            _collect_from_app(app, region_filter, results, seen, CAP)
+            if len(results) >= CAP:
+                break
+        summary = _summarize(results)
+        summary["scanned_apps"] = [(a.name or "?") for a in apps]
 
-    for app in apps:
-        _collect_from_app(app, region_filter, results, seen_names, CAP)
-        if len(results) >= CAP:
-            break
-
-    summary = _summarize(results)
-    summary["scanned_apps"] = [(a.name or "unknown") for a in apps]
-    if region_filter:
+    # ── Mode B: region only ───────────────────────────────────────────────────
+    elif region_filter:
+        try:
+            for app in desktop:
+                if app is None:
+                    continue
+                _collect_from_app(app, region_filter, results, seen, CAP)
+                if len(results) >= CAP:
+                    break
+        except Exception:
+            pass
+        summary = _summarize(results)
         summary["region"] = region_filter
 
+    # ── Mode C: no args → top bar + active app ───────────────────────────────
+    else:
+        # 1. Always include top bar (gnome-shell)
+        top_bar_region = {"x1": 0, "y1": 0, "x2": 9999, "y2": 55}
+        try:
+            for app in desktop:
+                if app and (app.name or "").lower() == "gnome-shell":
+                    _collect_from_app(app, top_bar_region, results, seen, 15)
+                    break
+        except Exception:
+            pass
+
+        # 2. Scan active app via kernel state + bridge
+        active_atspi = None
+        try:
+            from kernel.kernel_state import state as kstate
+            from kernel.app_bridge import bridge
+            if kstate.active_window and kstate.active_window != "unknown":
+                active_atspi = bridge.resolve_active_window(kstate.active_window)
+        except Exception:
+            pass
+
+        if active_atspi:
+            q = active_atspi.lower()
+            try:
+                for app in desktop:
+                    if app and (app.name or "").lower() == q:
+                        _collect_from_app(app, None, results, seen, CAP)
+                        break
+            except Exception:
+                pass
+
+        summary = _summarize(results)
+        summary["note"] = "Auto-scoped: top bar + active window"
+        if active_atspi:
+            summary["active_app"] = active_atspi
+
+    if region_filter:
+        summary["region"] = region_filter
     return summary
 
 
 async def handle_find_element_by_label(args: dict) -> dict:
-    """Find interactive elements whose name contains the given label (case-insensitive)."""
     if not HAS_PYATSPI:
         return {"error": "pyatspi not installed."}
-
     label = (args.get("label") or "").lower().strip()
     if not label:
         return {"error": "Missing 'label' argument"}
-
     app_filter = (args.get("app") or "").strip() or None
-
     try:
-        desktop = pyatspi.Registry.getDesktop(0)
-        apps = _find_apps(desktop, app_filter)
-        if not apps:
-            return {"matches": [], "note": f"No app matching '{app_filter}' found."}
-
+        if app_filter:
+            apps, err = _resolve_app(app_filter)
+            if err:
+                return {"error": err}
+        else:
+            desktop = pyatspi.Registry.getDesktop(0)
+            apps = [a for a in desktop if a]
         results: list = []
-        seen_names: set[str] = set()
-        # Collect all (no region filter) then search
+        seen: set = set()
         for app in apps:
-            _collect_from_app(app, None, results, seen_names, cap=200)
-
+            _collect_from_app(app, None, results, seen, 200)
         matches = [e for e in results if label in e.get("name", "").lower()]
         return {"matches": matches[:10]}
     except Exception as e:
@@ -278,40 +294,32 @@ async def handle_find_element_by_label(args: dict) -> dict:
 
 
 async def handle_read_element_text(args: dict) -> dict:
-    """Read a specific element by id from the last scan. Requires re-scanning."""
     if not HAS_PYATSPI:
         return {"error": "pyatspi not installed."}
-
     el_id = str(args.get("id", "")).strip()
     if not el_id:
         return {"error": "Missing 'id' argument"}
-
     app_filter = (args.get("app") or "").strip() or None
-
     try:
-        desktop = pyatspi.Registry.getDesktop(0)
-        apps = _find_apps(desktop, app_filter)
-        if not apps:
-            return {"error": "No matching app found."}
-
+        if app_filter:
+            apps, err = _resolve_app(app_filter)
+            if err:
+                return {"error": err}
+        else:
+            desktop = pyatspi.Registry.getDesktop(0)
+            apps = [a for a in desktop if a]
         results: list = []
-        seen_names: set[str] = set()
+        seen: set = set()
         for app in apps:
-            _collect_from_app(app, None, results, seen_names, cap=200)
-
+            _collect_from_app(app, None, results, seen, 200)
         match = next((e for e in results if e["id"] == el_id), None)
-        if match:
-            return {"element": match}
-        return {"error": f"No element with id={el_id} found."}
+        return {"element": match} if match else {"error": f"No element id={el_id}"}
     except Exception as e:
         return {"error": str(e)}
 
 
 async def handle_list_at_spi_apps(args: dict) -> dict:
-    """
-    List all apps currently registered on the AT-SPI bus.
-    Useful for finding the exact app name to pass to get_ui_elements.
-    """
+    """List all apps on the AT-SPI bus. Use to find process names for get_ui_elements."""
     if not HAS_PYATSPI:
         return {"error": "pyatspi not installed."}
     try:
@@ -321,10 +329,7 @@ async def handle_list_at_spi_apps(args: dict) -> dict:
             if app is None:
                 continue
             try:
-                apps.append({
-                    "name":       app.name or "(unnamed)",
-                    "child_count": app.childCount,
-                })
+                apps.append({"name": app.name or "(unnamed)", "child_count": app.childCount})
             except Exception:
                 continue
         return {"apps": apps}

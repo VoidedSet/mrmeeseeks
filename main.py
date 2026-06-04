@@ -114,6 +114,19 @@ async def main():
             try:
                 response = await brain.process(user_input)
                 print(f"\n[Meeseeks] {response}\n")
+                
+                # Feedback loop
+                if brain.last_interaction:
+                    ans = input("Did it fulfill the request? (y/n) [y]: ").strip().lower()
+                    user_success = ans != 'n'
+                    score_str = input("Quality score (1-5) [5]: ").strip()
+                    try:
+                        score = int(score_str) if score_str else 5
+                    except ValueError:
+                        score = 5
+                    score = max(1, min(5, score))
+                    brain.log_finetune_sample(user_success, score)
+                    print()
             except Exception as e:
                 log.exception(f"Brain.process raised: {e}")
                 print(f"\n[Meeseeks] Internal error: {e}\n")

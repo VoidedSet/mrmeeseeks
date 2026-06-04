@@ -23,6 +23,7 @@ import logging
 import subprocess
 
 from kernel.kernel_state import state
+from kernel.app_bridge import bridge as app_bridge
 
 log = logging.getLogger("kernel")
 
@@ -30,6 +31,7 @@ log = logging.getLogger("kernel")
 POLL_ACTIVE_WINDOW = 0.8
 POLL_OPEN_WINDOWS  = 3.0
 POLL_BATTERY       = 30.0
+POLL_APP_BRIDGE    = 5.0
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -113,6 +115,19 @@ async def _poll_open_windows(brain_ref):
         await asyncio.sleep(POLL_OPEN_WINDOWS)
 
 
+async def _poll_app_bridge(brain_ref):
+    """Rebuild app bridge table every POLL_APP_BRIDGE seconds."""
+    while True:
+        try:
+            app_bridge.refresh()
+            changed = state.set_app_bridge(app_bridge.get_table())
+            if changed:
+                log.debug(f"App bridge updated: {len(state.app_bridge)} processes")
+        except Exception as e:
+            log.warning(f"App bridge poll error: {e}")
+        await asyncio.sleep(POLL_APP_BRIDGE)
+
+
 async def _poll_battery(brain_ref):
     """Poll battery every POLL_BATTERY seconds. Fire alert on low battery."""
     LOW_BATTERY_THRESHOLD = 15  # percent
@@ -163,7 +178,10 @@ async def start(brain_ref=None):
         level, status = _read_battery()
         state.set_battery(level, status)
 
-        log.info(f"Kernel state warm: window={title!r}, {len(titles)} windows, battery={level}")
+        app_bridge.refresh()
+        state.set_app_bridge(app_bridge.get_table())
+
+        log.info(f"Kernel state warm: window={title!r}, {len(titles)} windows, battery={level}, {len(state.app_bridge)} apps bridged")
     except Exception as e:
         log.warning(f"Kernel warm-up error: {e}")
 
@@ -172,4 +190,5 @@ async def start(brain_ref=None):
         _poll_active_window(brain_ref),
         _poll_open_windows(brain_ref),
         _poll_battery(brain_ref),
+        _poll_app_bridge(brain_ref),
     )

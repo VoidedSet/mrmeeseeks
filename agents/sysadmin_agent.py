@@ -11,6 +11,7 @@ import shlex
 import logging
 import os
 import glob
+from kernel.kernel_state import state
 from core.ipc_bus import bus
 from core.schema_registry import READ_ONLY_CMDS, is_destructive
 import safety.gate as gate
@@ -103,13 +104,15 @@ async def handle_read_notifications(args: dict) -> dict:
     return {"notifications": "notification reading not yet implemented"}
 
 
+SYSTEM_WINDOWS = {"plank", "Desktop Icons", "Desktop Icons 1", "gjs", "gnome-shell"}
+
 async def handle_list_open_windows(args: dict) -> dict:
     try:
-        result = subprocess.run(
-            "wmctrl -l",
-            shell=True, capture_output=True, text=True, timeout=5
-        )
-        return {"windows": result.stdout.strip() or "No open windows found or wmctrl not installed."}
+        # Use state.open_windows since it's already updated and parsed
+        windows = [w for w in state.open_windows if w not in SYSTEM_WINDOWS]
+        if not windows:
+            return {"windows": "No open windows found."}
+        return {"windows": "\n".join(windows)}
     except Exception as e:
         return {"error": str(e)}
 

@@ -1,0 +1,4 @@
+{
+  "data": "gsettings set org.gnome.desktop.interface toolkit-accessibility true \u2014 then restart the app.",
+  "updated_at": "2026-06-04T23:32:05.702790"
+}
