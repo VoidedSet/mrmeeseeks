@@ -74,3 +74,8 @@
 2026-06-05 02:03:44,603 [state_machine] State: THINKING → IDLE
 2026-06-05 02:03:53,542 [state_machine] State: IDLE → THINKING
 2026-06-05 02:03:53,543 [brain] ReAct step 1/10
+2026-06-05 02:04:02,311 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'Visual Studio Code'}
+2026-06-05 02:04:03,115 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': '.env - mr-meeseeks - Visual Studio Code'}
+2026-06-05 02:04:03,920 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': 'unknown'}
+2026-06-05 02:04:04,725 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': '(6) Instagram — Mozilla Firefox'}
+2026-06-05 02:04:05,529 [brain] Proactive event queued (busy): {'type': 'window_focus', 'window': '.env - mr-meeseeks - Visual Studio Code'}

@@ -241,9 +241,13 @@ class OllamaProvider(LLMProvider):
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
-                "num_ctx": 4096,
+                "num_ctx": int(os.environ.get("OLLAMA_NUM_CTX", "4096")),
             },
         }
+
+        # Disable/enable reasoning thinking process via think parameter
+        think_val = os.environ.get("OLLAMA_THINK", "false").lower().strip() == "true"
+        payload["think"] = think_val
 
         # Ollama JSON mode (fallback if no tools)
         if force_json and not tools:
@@ -287,9 +291,13 @@ class OllamaProvider(LLMProvider):
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
-                "num_ctx": 4096,
+                "num_ctx": int(os.environ.get("OLLAMA_NUM_CTX", "4096")),
             },
         }
+
+        # Disable/enable reasoning thinking process via think parameter
+        think_val = os.environ.get("OLLAMA_THINK", "false").lower().strip() == "true"
+        payload["think"] = think_val
 
         if tools:
             payload["tools"] = tools

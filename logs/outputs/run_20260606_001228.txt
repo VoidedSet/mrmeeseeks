@@ -1,0 +1,41 @@
+2026-06-06 00:12:28,090 [main] Logging to logs/outputs/run_20260606_001228.txt
+2026-06-06 00:12:28,214 [llm_provider] [Ollama] model=qwen2.5:3b url=http://localhost:11434/api/chat
+2026-06-06 00:12:28,214 [llm_provider] LLM provider initialized: ollama/qwen2.5:3b
+2026-06-06 00:12:28,214 [main] LLM backend: ollama/qwen2.5:3b
+2026-06-06 00:12:28,219 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-06 00:12:28,219 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-06 00:12:28,219 [ipc_bus] Registered handler: check_battery
+2026-06-06 00:12:28,219 [ipc_bus] Registered handler: get_active_window
+2026-06-06 00:12:28,219 [ipc_bus] Registered handler: list_open_windows
+2026-06-06 00:12:28,219 [ipc_bus] Registered handler: read_notifications
+2026-06-06 00:12:28,219 [sysadmin] SysAdmin agent registered ✓
+2026-06-06 00:12:28,219 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-06 00:12:28,219 [ipc_bus] Registered handler: list_memory_keys
+2026-06-06 00:12:28,220 [ipc_bus] Registered handler: update_memory
+2026-06-06 00:12:28,220 [ipc_bus] Registered handler: fetch_memory
+2026-06-06 00:12:28,220 [memory_agent] Memory agent registered ✓
+2026-06-06 00:12:28,315 [ipc_bus] Registered handler: simple_scrape
+2026-06-06 00:12:28,315 [ipc_bus] Registered handler: gui_research
+2026-06-06 00:12:28,315 [web_agent] Web agent registered ✓
+2026-06-06 00:12:28,405 [ipc_bus] Registered handler: click_at
+2026-06-06 00:12:28,405 [ipc_bus] Registered handler: double_click_at
+2026-06-06 00:12:28,405 [ipc_bus] Registered handler: type_text
+2026-06-06 00:12:28,405 [ipc_bus] Registered handler: key_press
+2026-06-06 00:12:28,405 [ipc_bus] Registered handler: scroll
+2026-06-06 00:12:28,405 [hands_agent] Hands agent registered ✓
+2026-06-06 00:12:28,434 [ipc_bus] Registered handler: get_ui_elements
+2026-06-06 00:12:28,434 [ipc_bus] Registered handler: read_element_text
+2026-06-06 00:12:28,434 [ipc_bus] Registered handler: find_element_by_label
+2026-06-06 00:12:28,434 [ipc_bus] Registered handler: list_at_spi_apps
+2026-06-06 00:12:28,434 [eyes_agent] Eyes agent registered ✓
+2026-06-06 00:12:28,435 [ipc_bus] Registered handler: speak
+2026-06-06 00:12:28,435 [voice_agent] Voice agent registered ✓
+2026-06-06 00:12:28,435 [voice_agent] Initializing Kokoro TTS engine from /home/kshayik/Projects/mr-meeseeks/models/kokoro-v1.0.int8.onnx...
+2026-06-06 00:12:28,441 [main] Kernel listener started ✓
+2026-06-06 00:12:28,858 [kernel] Kernel listener starting...
+2026-06-06 00:12:29,035 [kernel] Kernel state warm: window='● schema_registry.py - mr-meeseeks - Visual Studio Code', 8 windows, battery=100%, 7 apps bridged
+2026-06-06 00:12:29,138 [voice_agent] Kokoro TTS: CUDA detected. Running on GPU ✓
+2026-06-06 00:12:30,007 [voice_agent] Kokoro TTS engine initialized successfully ✓
+2026-06-06 00:12:31,617 [state_machine] State: IDLE → THINKING
+2026-06-06 00:12:31,617 [brain] ReAct step 1/10
+2026-06-06 00:12:38,583 [main] Kernel listener stopped.
