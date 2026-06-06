@@ -1,0 +1,53 @@
+2026-06-07 00:17:49,812 [main] Logging to logs/outputs/run_20260607_001749.txt
+2026-06-07 00:17:50,122 [llm_provider] [Ollama] model=functiongemma:270m url=http://localhost:11434/api/chat
+2026-06-07 00:17:50,122 [llm_provider] LLM provider initialized: ollama/functiongemma:270m
+2026-06-07 00:17:50,122 [main] LLM backend: ollama/functiongemma:270m
+2026-06-07 00:17:50,127 [ipc_bus] Registered handler: run_bg_cmd
+2026-06-07 00:17:50,127 [ipc_bus] Registered handler: open_visible_terminal
+2026-06-07 00:17:50,127 [ipc_bus] Registered handler: check_battery
+2026-06-07 00:17:50,127 [ipc_bus] Registered handler: get_active_window
+2026-06-07 00:17:50,127 [ipc_bus] Registered handler: list_open_windows
+2026-06-07 00:17:50,127 [ipc_bus] Registered handler: read_notifications
+2026-06-07 00:17:50,127 [sysadmin] SysAdmin agent registered ✓
+2026-06-07 00:17:50,127 [memory_agent] Memory store at: /home/kshayik/Projects/mr-meeseeks/memory/store
+2026-06-07 00:17:50,127 [ipc_bus] Registered handler: list_memory_keys
+2026-06-07 00:17:50,128 [ipc_bus] Registered handler: update_memory
+2026-06-07 00:17:50,128 [ipc_bus] Registered handler: fetch_memory
+2026-06-07 00:17:50,128 [memory_agent] Memory agent registered ✓
+2026-06-07 00:17:50,202 [ipc_bus] Registered handler: simple_scrape
+2026-06-07 00:17:50,202 [ipc_bus] Registered handler: gui_research
+2026-06-07 00:17:50,202 [web_agent] Web agent registered ✓
+2026-06-07 00:17:50,287 [ipc_bus] Registered handler: click_at
+2026-06-07 00:17:50,288 [ipc_bus] Registered handler: double_click_at
+2026-06-07 00:17:50,288 [ipc_bus] Registered handler: type_text
+2026-06-07 00:17:50,288 [ipc_bus] Registered handler: key_press
+2026-06-07 00:17:50,288 [ipc_bus] Registered handler: scroll
+2026-06-07 00:17:50,288 [hands_agent] Hands agent registered ✓
+2026-06-07 00:17:50,314 [ipc_bus] Registered handler: get_ui_elements
+2026-06-07 00:17:50,314 [ipc_bus] Registered handler: read_element_text
+2026-06-07 00:17:50,314 [ipc_bus] Registered handler: find_element_by_label
+2026-06-07 00:17:50,314 [ipc_bus] Registered handler: list_at_spi_apps
+2026-06-07 00:17:50,314 [eyes_agent] Eyes agent registered ✓
+2026-06-07 00:17:50,315 [ipc_bus] Registered handler: speak
+2026-06-07 00:17:50,315 [voice_agent] Voice agent registered ✓
+2026-06-07 00:17:50,316 [voice_agent] Preloaded CUDA library: libcudnn.so.9 ✓
+2026-06-07 00:17:50,316 [voice_agent] Initializing Kokoro TTS engine from /home/kshayik/Projects/mr-meeseeks/models/kokoro-v1.0.int8.onnx...
+2026-06-07 00:17:50,320 [main] Kernel listener started ✓
+2026-06-07 00:17:50,411 [ui.hotkey] failed to register global hotkey '<ctrl>+<alt>+space'
+Traceback (most recent call last):
+  File "/home/kshayik/Projects/mr-meeseeks/core/ui/hotkey.py", line 34, in start
+    self._listener = keyboard.GlobalHotKeys({self._hotkey_combo: _on_triggered})
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kshayik/Projects/mr-meeseeks/venv/lib/python3.12/site-packages/pynput/keyboard/__init__.py", line 218, in __init__
+    HotKey(HotKey.parse(key), value) for key, value in hotkeys.items()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/kshayik/Projects/mr-meeseeks/venv/lib/python3.12/site-packages/pynput/keyboard/__init__.py", line 170, in parse
+    parsed_parts = [parse(s) for s in raw_parts]
+                    ^^^^^^^^
+  File "/home/kshayik/Projects/mr-meeseeks/venv/lib/python3.12/site-packages/pynput/keyboard/__init__.py", line 166, in parse
+    raise ValueError(s)
+ValueError: space
+2026-06-07 00:17:50,420 [kernel] Kernel listener starting...
+2026-06-07 00:17:50,953 [voice_agent] Kokoro TTS: CUDA detected. Running on GPU ✓
+2026-06-07 00:17:51,584 [voice_agent] Kokoro TTS engine initialized successfully ✓
+2026-06-07 00:18:05,476 [kernel] Kernel state warm: window='Welcome - mr-meeseeks - Visual Studio Code', 9 windows, battery=100%, 9 apps bridged

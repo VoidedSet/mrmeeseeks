@@ -31,6 +31,7 @@ class StateMachine:
     def __init__(self):
         self.current = State.IDLE
         self._lock   = asyncio.Lock()
+        self.listeners = []
 
     async def transition(self, new_state: State):
         async with self._lock:
@@ -40,6 +41,16 @@ class StateMachine:
                 return
             log.info(f"State: {self.current.value} → {new_state.value}")
             self.current = new_state
+            
+            for callback in self.listeners:
+                try:
+                    if asyncio.iscoroutinefunction(callback):
+                        await callback(new_state)
+                    else:
+                        callback(new_state)
+                except Exception as e:
+                    log.exception(f"Error in state transition listener: {e}")
 
     def is_busy(self) -> bool:
         return self.current != State.IDLE
+

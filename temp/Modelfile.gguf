@@ -1,0 +1,17 @@
+FROM "/media/kshayik/New Volume/meeseeks_gemma_merged.gguf"
+
+TEMPLATE """{{ if .System }}<start_of_turn>developer
+{{ .System }}<end_of_turn>
+{{ end }}{{ if .Prompt }}<start_of_turn>user
+{{ .Prompt }}<end_of_turn>
+{{ end }}<start_of_turn>model
+{{ .Response }}<end_of_turn>
+"""
+
+SYSTEM """You are a model that can do function calling with the following functions<start_function_declaration>declaration:check_battery{description:<escape>Check the laptop's battery percentage and charging status.<escape>,parameters:{type:<escape>OBJECT<escape>}}<end_function_declaration><start_function_declaration>declaration:get_active_window{description:<escape>Return the title of the application window that is currently in focus on screen.<escape>,parameters:{type:<escape>OBJECT<escape>}}<end_function_declaration><start_function_declaration>declaration:run_bg_cmd{description:<escape>Execute a safe, read-only Linux shell command (ls, cat, pwd, grep, etc.) and return its output.<escape>,parameters:{properties:{cmd:{description:<escape>A valid Linux shell command string using only cat, ls, grep, pwd, echo, df, free, uname.<escape>,type:<escape>STRING<escape>}},required:[<escape>cmd<escape>],type:<escape>OBJECT<escape>}}<end_function_declaration>"""
+
+PARAMETER temperature 0.3
+PARAMETER top_p 0.9
+
+PARAMETER stop "<end_of_turn>"
+PARAMETER stop "<eos>"

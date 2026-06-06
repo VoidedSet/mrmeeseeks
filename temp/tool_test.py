@@ -34,6 +34,191 @@ from ollama import chat, Client
 
 console = Console()
 
+# --- Hugging Face (HF) local model loading and runner helper ---
+HF_MODEL = None
+HF_TOKENIZER = None
+
+def get_hf_model_and_tokenizer(model_path: str):
+    global HF_MODEL, HF_TOKENIZER
+    if HF_MODEL is None:
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        import torch
+        console.print(f"[yellow]Loading HF model from {model_path}...[/yellow]")
+        HF_TOKENIZER = AutoTokenizer.from_pretrained(model_path)
+        HF_MODEL = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            torch_dtype=torch.float32,
+            device_map="auto"
+        )
+    return HF_MODEL, HF_TOKENIZER
+
+def parse_gemma_tool_call(text: str):
+    import re
+    
+    # If the model starts hallucinating a response or turn transition, truncate it
+    for marker in ["<start_function_response>", "response:", "<start_of_turn>"]:
+        if marker in text:
+            text = text.split(marker)[0]
+            
+    text = text.strip()
+    if "<start_function_call>" in text and not text.endswith("<end_function_call>"):
+        # Auto-close escape tags if they are unbalanced
+        escapes = text.count("<escape>")
+        if escapes % 2 != 0:
+            text += "<escape>"
+        # Find if we opened a brace for parameters but did not close it
+        match_start = re.search(r"call:[a-zA-Z0-9_-]+\{", text)
+        if match_start:
+            start_idx = match_start.end()
+            if "}" not in text[start_idx:]:
+                text += "}"
+        if not text.endswith("<end_function_call>"):
+            text += "<end_function_call>"
+            
+    # Look for call:tool_name{args} or call:tool_name{}
+    match = re.search(r"call:([a-zA-Z0-9_-]+)\{(.*?)\}", text)
+    if not match:
+        return None, {}
+    
+    tool_name = match.group(1)
+    args_str = match.group(2).strip()
+    args = {}
+    
+    if args_str:
+        # Format is like: key:<escape>value<escape> or key:value
+        pairs = re.findall(r"([a-zA-Z0-9_-]+)\s*:\s*<escape>(.*?)<escape>", args_str)
+        if not pairs:
+            pairs = re.findall(r"([a-zA-Z0-9_-]+)\s*:\s*\"(.*?)\"", args_str)
+        if not pairs:
+            pairs = re.findall(r"([a-zA-Z0-9_-]+)\s*:\s*([^,\}]+)", args_str)
+            
+        for k, v in pairs:
+            args[k] = v.strip()
+            
+    return tool_name, args
+
+def run_one_hf(model_path: str, prompt: str) -> dict:
+    import torch
+    
+    model, tokenizer = get_hf_model_and_tokenizer(model_path)
+    
+    # Map functions to standard OpenAI schemas for tokenizer
+    tools_schema = []
+    for func in TOOLS_LIST:
+        if func.__name__ == "check_battery":
+            tools_schema.append({
+                "type": "function",
+                "function": {
+                    "name": "check_battery",
+                    "description": "Check the laptop's battery percentage and charging status.",
+                    "parameters": {"type": "object", "properties": {}, "required": []}
+                }
+            })
+        elif func.__name__ == "get_active_window":
+            tools_schema.append({
+                "type": "function",
+                "function": {
+                    "name": "get_active_window",
+                    "description": "Return the title of the application window that is currently in focus on screen.",
+                    "parameters": {"type": "object", "properties": {}, "required": []}
+                }
+            })
+        elif func.__name__ == "run_bg_cmd":
+            tools_schema.append({
+                "type": "function",
+                "function": {
+                    "name": "run_bg_cmd",
+                    "description": "Execute a safe, read-only Linux shell command (ls, cat, pwd, grep, etc.) and return its output.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "cmd": {
+                                "type": "string",
+                                "description": "A valid Linux shell command string using only cat, ls, grep, pwd, echo, df, free, uname."
+                            }
+                        },
+                        "required": ["cmd"]
+                    }
+                }
+            })
+            
+    messages = [
+        {"role": "user", "content": prompt}
+    ]
+    
+    t0 = time.monotonic()
+    
+    try:
+        formatted_prompt = tokenizer.apply_chat_template(
+            messages,
+            tools=tools_schema,
+            add_generation_prompt=True,
+            tokenize=False
+        )
+    except Exception as e:
+        return {"tool_called": None, "args": {}, "final_response": "", "latency_ms": 0, "error": f"Template error: {e}"}
+        
+    inputs = tokenizer(formatted_prompt, return_tensors="pt").to("cuda")
+    
+    end_function_call_id = tokenizer.convert_tokens_to_ids("<end_function_call>")
+    start_of_turn_id = tokenizer.convert_tokens_to_ids("<start_of_turn>")
+    start_func_resp_id = tokenizer.convert_tokens_to_ids("<start_function_response>")
+    
+    eos_ids = [tokenizer.eos_token_id]
+    for tid in [end_function_call_id, start_of_turn_id, start_func_resp_id, 49, 50, 105]:
+        if tid is not None and tid not in eos_ids:
+            eos_ids.append(tid)
+
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs, 
+            max_new_tokens=150, 
+            do_sample=False,
+            eos_token_id=eos_ids
+        )
+        
+    generated_text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=False)
+    
+    tool_called, args = parse_gemma_tool_call(generated_text)
+    final_response = ""
+    error = None
+    
+    if tool_called:
+        if tool_called in TOOL_MAPPING:
+            func = TOOL_MAPPING[tool_called]
+            try:
+                result = func(**args)
+            except TypeError as e:
+                result = json.dumps({"error": f"Bad args: {e}"})
+        else:
+            result = json.dumps({"error": f"Tool '{tool_called}' not found."})
+            
+        tool_response_text = f"<start_function_response>response:{tool_called}{{value:<escape>{result}<escape>}}<end_function_response>"
+        
+        second_prompt = formatted_prompt + generated_text + tool_response_text
+        second_inputs = tokenizer(second_prompt, return_tensors="pt").to("cuda")
+        
+        with torch.no_grad():
+            second_outputs = model.generate(**second_inputs, max_new_tokens=150, do_sample=False)
+            
+        final_response = tokenizer.decode(
+            second_outputs[0][second_inputs.input_ids.shape[1]:],
+            skip_special_tokens=True
+        ).strip()
+    else:
+        final_response = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True).strip()
+        
+    latency_ms = int((time.monotonic() - t0) * 1000)
+    
+    return {
+        "tool_called":    tool_called,
+        "args":           args,
+        "final_response": final_response,
+        "latency_ms":     latency_ms,
+        "error":          error,
+    }
+
+
 # ─── System prompt injected into every chat call ─────────────────────────────
 # This is the primary guard against over-eager tool calling.
 SYSTEM_PROMPT = """You are a helpful AI assistant with access to a small set of OS tools.
@@ -256,6 +441,9 @@ def run_one(model: str, prompt: str, silent: bool = False) -> dict:
     Run a single prompt through model. Returns a result dict with:
       tool_called, args, final_response, latency_ms, error
     """
+    if model.startswith("/") or "merged" in model:
+        return run_one_hf(model, prompt)
+
     messages = []
     if not model.startswith("meeseeks-"):
         messages.append({"role": "system", "content": SYSTEM_PROMPT})
@@ -544,8 +732,25 @@ def main():
 
         if mode == "compare":
             console.print("[bold yellow]Comparing all local models on benchmark suite…[/bold yellow]\n")
-            summary = []
+            
+            models_to_compare = []
+            custom_path = "/media/kshayik/New Volume/meeseeks_gemma_merged"
+            if os.path.exists(custom_path):
+                models_to_compare.append(custom_path)
+            
             for m in local_models:
+                if m not in models_to_compare:
+                    models_to_compare.append(m)
+            
+            target_models = {
+                custom_path,
+                "meeseeks-qwen:latest"
+            }
+
+            summary = []
+            for m in models_to_compare:
+                if m not in target_models:
+                    continue
                 scored = run_benchmark(m)
                 passed, total, pct = print_score_table(m, scored)
                 avg_ms = sum(s["result"]["latency_ms"] for s in scored) / total if total else 0
@@ -587,8 +792,25 @@ def main():
 
     elif choice == "2":
         console.print("[bold yellow]Running compare across all local models…[/bold yellow]")
-        summary = []
+        
+        models_to_compare = []
+        custom_path = "/media/kshayik/New Volume/meeseeks_gemma_merged"
+        if os.path.exists(custom_path):
+            models_to_compare.append(custom_path)
+        
         for m in local_models:
+            if m not in models_to_compare:
+                models_to_compare.append(m)
+        
+        target_models = {
+            custom_path,
+            "meeseeks-qwen:latest"
+        }
+
+        summary = []
+        for m in models_to_compare:
+            if m not in target_models:
+                continue
             scored = run_benchmark(m)
             passed, total, pct = print_score_table(m, scored)
             avg_ms = sum(s["result"]["latency_ms"] for s in scored) / total if total else 0

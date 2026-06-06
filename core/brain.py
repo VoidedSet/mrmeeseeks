@@ -653,7 +653,9 @@ async def react_loop(
             seen_actions[action_key] = 1
 
             log.info(f"Dispatching → {tool_name}({tool_args})")
+            await brain.state_machine.transition(State.ACTING)
             result = await bus.dispatch(tool_name, tool_args)
+            await brain.state_machine.transition(State.THINKING)
             log.info(f"Result: {str(result)[:300]}")
 
             result_str = json.dumps(result)
@@ -773,7 +775,9 @@ async def react_loop(
 
         # ── Dispatch ──────────────────────────────────────────────────────────
         log.info(f"Dispatching → {tool_name}({tool_args})")
+        await brain.state_machine.transition(State.ACTING)
         result = await bus.dispatch(tool_name, tool_args)
+        await brain.state_machine.transition(State.THINKING)
         log.info(f"Result: {str(result)[:300]}")
 
         result_str = json.dumps(result)

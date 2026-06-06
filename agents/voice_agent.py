@@ -8,13 +8,17 @@ import os
 import logging
 import queue
 import threading
+import asyncio
 from core.ipc_bus import bus
+from core.state_machine import State
+from core.brain import brain
 
 log = logging.getLogger("voice_agent")
 
 _audio_queue = queue.Queue()
 _worker_thread = None
 _kokoro_engine = None
+_main_loop = None
 
 def _preload_cuda_libs():
     import sys
@@ -44,7 +48,7 @@ def _preload_cuda_libs():
 
 
 def _play_worker():
-    global _kokoro_engine
+    global _kokoro_engine, _main_loop
     
     # Try preloading any CUDA libraries installed in venv
     _preload_cuda_libs()
@@ -74,14 +78,14 @@ def _play_worker():
         else:
             log.info("Kokoro TTS: CUDA not detected. Falling back to CPU.")
         selected_providers.append("CPUExecutionProvider")
-
+ 
         session = InferenceSession(model_path, providers=selected_providers)
         _kokoro_engine = Kokoro.from_session(session, voices_path)
         log.info("Kokoro TTS engine initialized successfully ✓")
     except Exception as e:
         log.exception(f"Failed to initialize Kokoro TTS engine: {e}")
         return
-
+ 
     while True:
         try:
             text = _audio_queue.get()
@@ -107,23 +111,36 @@ def _play_worker():
                 log.error(f"Error during speech synthesis or playback: {ex}")
                 
             _audio_queue.task_done()
+            
+            # Transition to IDLE state once queue becomes empty
+            if _audio_queue.empty() and _main_loop:
+                _main_loop.call_soon_threadsafe(
+                    lambda: asyncio.create_task(brain.state_machine.transition(State.IDLE))
+                )
         except Exception as e:
             log.error(f"Voice worker thread loop hit an error: {e}")
-
+ 
 async def handle_speak(args: dict) -> dict:
     text = args.get("text", "").strip()
     if not text:
         return {"error": "Missing 'text' argument."}
         
     log.info(f"Queuing speak request: '{text[:60]}...'")
+    await brain.state_machine.transition(State.SPEAKING)
     _audio_queue.put(text)
     return {"status": "queued"}
-
+ 
 def register():
-    global _worker_thread
+    global _worker_thread, _main_loop
     bus.register("speak", handle_speak)
     
+    try:
+        _main_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        _main_loop = None
+        
     # Start playback worker thread
     _worker_thread = threading.Thread(target=_play_worker, daemon=True)
     _worker_thread.start()
     log.info("Voice agent registered ✓")
+

@@ -18,3 +18,8 @@ pyautogui             # mouse/keyboard control
 
 # ── Phase 5 — Kernel Listeners ────────────────────────────────────────────────
 # evdev                 # raw input events (/dev/input/event*)
+
+# ── GUI Overlay (Phase 4) ─────────────────────────────────────────────────────
+PyQt6>=6.4.0
+qasync>=0.23.0
+pynput>=1.7.6

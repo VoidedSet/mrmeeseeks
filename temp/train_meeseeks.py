@@ -34,9 +34,26 @@ except ImportError:
     from trl import SFTTrainer
     HAS_SFT_CONFIG = False
 
-def load_and_merge_datasets(files: list[str]) -> Dataset:
+def main():
+    parser = argparse.ArgumentParser(description="Fine-tune FunctionGemma for Mr Meeseeks.")
+    parser.add_argument("--model-id", default="google/functiongemma-270m-it", help="Base model ID on Hugging Face")
+    parser.add_argument("--dataset", default="temp/meeseeks_yaml_dataset_chatml.jsonl", help="Dataset file path")
+    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument("--batch-size", type=int, default=4, help="Batch size per device")
+    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate (higher for LoRA)")
+    parser.add_argument("--output-dir", default="temp/meeseeks-functiongemma-ft", help="Checkpoint output directory")
+    parser.add_argument("--no-lora", action="store_true", help="Disable LoRA and perform full fine-tuning (not recommended for 4GB VRAM)")
+    args = parser.parse_args()
+
+    # Load tokenizer first to format records
+    print(f"Loading tokenizer: {args.model_id}")
+    tokenizer = AutoTokenizer.from_pretrained(args.model_id)
+
+    # Load and merge dataset files
+    dataset_files = [args.dataset]
+    
     records = []
-    for fpath in files:
+    for fpath in dataset_files:
         if not os.path.exists(fpath):
             print(f"Dataset file not found: {fpath}, skipping.")
             continue
@@ -49,36 +66,37 @@ def load_and_merge_datasets(files: list[str]) -> Dataset:
                     
     if not records:
         raise ValueError("No records loaded. Make sure the dataset files exist and are not empty.")
-    
     print(f"Loaded a total of {len(records)} training records.")
-    return Dataset.from_list(records)
 
-def main():
-    parser = argparse.ArgumentParser(description="Fine-tune FunctionGemma for Mr Meeseeks.")
-    parser.add_argument("--model-id", default="google/functiongemma-270m-it", help="Base model ID on Hugging Face")
-    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
-    parser.add_argument("--batch-size", type=int, default=4, help="Batch size per device")
-    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate (higher for LoRA)")
-    parser.add_argument("--output-dir", default="temp/meeseeks-functiongemma-ft", help="Checkpoint output directory")
-    parser.add_argument("--no-lora", action="store_true", help="Disable LoRA and perform full fine-tuning (not recommended for 4GB VRAM)")
-    args = parser.parse_args()
+    # Pre-format datasets using chat templates in python to avoid PyArrow nested schemas bugs
+    print("Formatting dataset with chat templates...")
+    formatted_records = []
+    for r in records:
+        try:
+            text = tokenizer.apply_chat_template(
+                r["messages"],
+                tools=r.get("tools"),
+                add_generation_prompt=False,
+                tokenize=False
+            )
+            formatted_records.append({"text": text})
+        except Exception as e:
+            print(f"Skipping a malformed record. Error: {e}")
 
-    # Define dataset files to merge
-    dataset_files = [
-        "temp/meeseeks-finetune-dataset.jsonl",
-        "temp/meeseeks-finetune-dataset-extended.jsonl"
-    ]
+    # Build HF dataset from simple flat string records
+    formatted_dataset = Dataset.from_list(formatted_records)
     
-    # 1. Load and prepare dataset
-    raw_dataset = load_and_merge_datasets(dataset_files)
+    # Train/Test Split
+    split_dataset = formatted_dataset.train_test_split(test_size=0.1, shuffle=True, seed=42)
+    print(f"Train split size: {len(split_dataset['train'])}")
+    print(f"Val split size: {len(split_dataset['test'])}")
+
+    # Load model
+    print(f"Loading model: {args.model_id}")
     
-    # 2. Load tokenizer and model
-    print(f"Loading tokenizer and model: {args.model_id}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_id)
-    
-    # GTX 1650 doesn't support bfloat16 natively (runs on slow emulation), so we use float16
+    # GTX 1650 lacks full FP16 support and can suffer from NaN gradient overflows, so we train in FP32
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    dtype = torch.float16 if device == "cuda" else torch.float32
+    dtype = torch.float32
     
     model = AutoModelForCausalLM.from_pretrained(
         args.model_id,
@@ -86,26 +104,7 @@ def main():
         device_map="auto" if device == "cuda" else None,
         attn_implementation="eager"
     )
-    
-    # 3. Format dataset using FunctionGemma's chat template
-    print("Formatting dataset with chat templates...")
-    def format_chat_template(sample):
-        # Apply the chat template containing developer, user, assistant, and tool declarations
-        text = tokenizer.apply_chat_template(
-            sample["messages"],
-            tools=sample.get("tools"),
-            add_generation_prompt=False,
-            tokenize=False
-        )
-        return {"text": text}
-    
-    formatted_dataset = raw_dataset.map(format_chat_template)
-    
-    # Train/Test Split
-    split_dataset = formatted_dataset.train_test_split(test_size=0.1, shuffle=True, seed=42)
-    print(f"Train split size: {len(split_dataset['train'])}")
-    print(f"Val split size: {len(split_dataset['test'])}")
-    
+
     # 4. Configure PEFT / LoRA (Required for GTX 1650 4GB VRAM)
     if not args.no_lora:
         print("Configuring PEFT (LoRA)...")
@@ -124,30 +123,38 @@ def main():
 
     # 5. Define Training Arguments
     print("Setting up trainer...")
+    grad_accum = max(1, 4 // args.batch_size)
+    print(f"Using batch size: {args.batch_size}, gradient accumulation steps: {grad_accum}")
     training_kwargs = {
         "output_dir": args.output_dir,
-        "max_seq_length": 512,  # Limit seq length to save VRAM
         "packing": False,
         "num_train_epochs": args.epochs,
         "per_device_train_batch_size": args.batch_size,
         "per_device_eval_batch_size": args.batch_size,
+        "gradient_accumulation_steps": grad_accum,
         "gradient_checkpointing": True,  # Critical to save activation VRAM
         "optim": "adamw_torch_fused" if device == "cuda" else "adamw_torch",
         "logging_steps": 5,
         "eval_strategy": "epoch",
         "save_strategy": "epoch",
         "learning_rate": args.lr,
-        "fp16": True if dtype == torch.float16 else False,
+        "fp16": False,
         "bf16": False,
         "lr_scheduler_type": "cosine",
         "warmup_ratio": 0.03,
         "report_to": "none"
     }
 
+    sft_extra_kwargs = {}
     if HAS_SFT_CONFIG:
+        training_kwargs["max_length"] = 512
+        training_kwargs["dataset_text_field"] = "text"
         trainer_args = SFTConfig(**training_kwargs)
     else:
+        # Standard TrainingArguments don't accept max_seq_length, SFTTrainer accepts it directly
         trainer_args = TrainingArguments(**training_kwargs)
+        sft_extra_kwargs["max_seq_length"] = 512
+        sft_extra_kwargs["dataset_text_field"] = "text"
 
     # 6. Initialize SFTTrainer
     trainer = SFTTrainer(
@@ -155,8 +162,8 @@ def main():
         args=trainer_args,
         train_dataset=split_dataset["train"],
         eval_dataset=split_dataset["test"],
-        dataset_text_field="text",
         processing_class=tokenizer,
+        **sft_extra_kwargs
     )
     
     # 7. Start Training

@@ -16,11 +16,20 @@ Handler = Callable[[dict], Awaitable[Any]]
 class IPCBus:
     def __init__(self):
         self._handlers: dict[str, Handler] = {}
+        self._listeners: list[Callable[[str, dict], None]] = []
 
     def register(self, tool_name: str, handler: Handler):
         """Agents call this at startup to register their tool handlers."""
         self._handlers[tool_name] = handler
         log.info(f"Registered handler: {tool_name}")
+
+    def add_listener(self, callback: Callable[[str, dict], None]):
+        """UI or other components register a listener to observe dispatches."""
+        self._listeners.append(callback)
+
+    def remove_listener(self, callback: Callable[[str, dict], None]):
+        if callback in self._listeners:
+            self._listeners.remove(callback)
 
     async def dispatch(self, tool_name: str, args: dict) -> Any:
         """
@@ -28,6 +37,13 @@ class IPCBus:
         Routes to the correct agent handler.
         Returns the result.
         """
+        # Notify listeners first (so UI can animate cursor flight/clicks)
+        for cb in self._listeners:
+            try:
+                cb(tool_name, args)
+            except Exception as e:
+                log.warning(f"Error in IPCBus listener for '{tool_name}': {e}")
+
         handler = self._handlers.get(tool_name)
 
         if handler is None:
