@@ -1,8 +1,8 @@
 {
   "data": {
-    "user": "Hello",
-    "response": "Sorry, something went wrong: Server error '500 Internal Server Error' for url 'http://localhost:11434/api/chat'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500",
-    "ts": "2026-06-08T01:18:45.947424"
+    "user": "Hello, hello",
+    "response": "I found 'hello' in various places, including Wikipedia and Hellomagazine.",
+    "ts": "2026-06-08T02:42:44.230558"
   },
-  "updated_at": "2026-06-08T01:18:45.955899"
+  "updated_at": "2026-06-08T02:42:44.230878"
 }

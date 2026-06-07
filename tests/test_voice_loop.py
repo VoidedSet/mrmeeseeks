@@ -487,7 +487,7 @@ async def main():
         # Configure GPU session options and mem limit
         gpu_opts = {
             "device_id": 0,
-            "gpu_mem_limit": 1024 * 1024 * 1024,  # Cap VRAM at 1 GB (1024 MB)
+            "gpu_mem_limit": 2 * 1024 * 1024 * 1024,  # Cap VRAM at 2 GB (2048 MB)
             "cudnn_conv_algo_search": "HEURISTIC",
             "arena_extend_strategy": "kSameAsRequested"
         }

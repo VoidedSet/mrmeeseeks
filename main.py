@@ -423,7 +423,7 @@ async def main():
 
             gpu_opts = {
                 "device_id": 0,
-                "gpu_mem_limit": 1024 * 1024 * 1024,
+                "gpu_mem_limit": 2 * 1024 * 1024 * 1024,  # Cap VRAM at 2 GB (2048 MB)
                 "cudnn_conv_algo_search": "HEURISTIC",
                 "arena_extend_strategy": "kSameAsRequested"
             }
@@ -684,20 +684,9 @@ async def main():
         # ── GUI Mode ─────────────────────────────────────────────────────────────
         from PyQt6.QtWidgets import QApplication
         from core.ui.overlay import UIOverlay
-        from core.ui.tray import TrayController
-        from core.ui.panel import ControlPanel
-        from core.ui.hotkey import GlobalHotkeyMonitor
         from core.ipc_bus import bus
 
         overlay = UIOverlay()
-
-        panel = ControlPanel(hotkey_label="Ctrl+Alt+Space")
-        panel.quit_requested.connect(QApplication.instance().quit)
-
-        tray = TrayController()
-        tray.open_panel_requested.connect(panel.show_near_cursor)
-        tray.quit_requested.connect(QApplication.instance().quit)
-        tray.show()
 
         # Voice recording and toggle logic
         voice_stop_event = None
@@ -855,18 +844,8 @@ async def main():
                 overlay.dismiss()
                 await brain.state_machine.transition(State.IDLE)
 
-        # Wire global summons hotkey to toggle voice conversation directly
-        hotkey_monitor = GlobalHotkeyMonitor("<ctrl>+<alt>+<space>")
-        hotkey_monitor.triggered.connect(lambda: asyncio.create_task(toggle_voice()))
-        hotkey_monitor.start()
-
         # Left-click on status pill toggles voice recording (routed via D-Bus)
         overlay.clicked.connect(lambda: asyncio.create_task(toggle_voice()))
-
-        # Right-click panel positioning is deprecated for the native GNOME Top Bar extension.
-        # The control panel can be toggled via the global hotkey or the system tray menu.
-        # def show_panel_below_pill():
-        #     pass
 
         # Wire state machine changes to UI status pill updates
         brain.state_machine.listeners.append(overlay.update_state)
@@ -879,9 +858,7 @@ async def main():
         # Clean shutdown
         if voice_recording_task and not voice_recording_task.done():
             voice_recording_task.cancel()
-        hotkey_monitor.stop()
         overlay.close()
-        panel.close()
         kernel_task.cancel()
         try:
             await kernel_task

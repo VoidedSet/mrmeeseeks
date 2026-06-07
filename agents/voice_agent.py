@@ -9,17 +9,22 @@ import logging
 import queue
 import threading
 import asyncio
+import re
 from core.ipc_bus import bus
 from core.state_machine import State
 from core.brain import brain
 
 log = logging.getLogger("voice_agent")
 
-_audio_queue = queue.Queue()
-_worker_thread = None
+_text_queue = queue.Queue()
+_audio_queue = queue.Queue(maxsize=3)
+_synthesis_thread = None
+_playback_thread = None
 _kokoro_engine = None
 _main_loop = None
 _active_stream = None
+_active_generation_id = 0
+_generation_lock = threading.Lock()
 
 libs_cuda13 = [
     ("cuda_runtime", "libcudart.so.13"),
@@ -98,22 +103,45 @@ def _preload_cuda_libs():
                 pass
 
 
-def _play_worker():
-    global _kokoro_engine, _main_loop, _active_stream
+def clean_text_for_tts(text: str) -> str:
+    """
+    Cleans text formatting, modifiers, and fixes pronunciations of / symbol.
+    - Removes formatting markers (** or \n)
+    - Replaces word/word with "word or word"
+    - Replaces number/number with "number on number" (e.g. 3/4 -> 3 on 4)
+    """
+    # 1. Remove markdown styling (**, *, __, _, `, etc.)
+    text = re.sub(r"\*\*|__|\*|_|`", "", text)
+    
+    # 2. Replace / between two numbers (with or without spaces) with "on"
+    text = re.sub(r"(\d+)\s*/\s*(\d+)", r"\1 on \2", text)
+    
+    # 3. Replace / between two words (with or without spaces) with "or"
+    text = re.sub(r"([a-zA-Z]+)\s*/\s*([a-zA-Z]+)", r"\1 or \2", text)
+    
+    # 4. Replace any remaining forward slashes with spaces
+    text = text.replace("/", " ")
+    
+    # 5. Collapse multiple spaces and newlines
+    text = re.sub(r"\s+", " ", text).strip()
+    
+    return text
+
+
+def _synthesis_worker():
+    global _kokoro_engine
     
     # Preload dynamic CUDA 12/13 libraries
     _preload_cuda_libs()
     
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    model_path = os.path.join(project_root, "models", "kokoro-v1.0.int8.onnx")
+    model_path = os.path.join(project_root, "models", "kokoro-v1.0.fp16.onnx")
     voices_path = os.path.join(project_root, "models", "voices-v1.0.bin")
     
     log.info(f"Initializing Kokoro TTS engine from {model_path}...")
     try:
-        import sounddevice as sd
-        from kokoro_onnx import Kokoro
-        
         import onnxruntime as ort
+        from kokoro_onnx import Kokoro
         from onnxruntime import InferenceSession
         
         if not os.path.exists(model_path) or not os.path.exists(voices_path):
@@ -124,8 +152,14 @@ def _play_worker():
         available = ort.get_available_providers()
         selected_providers = []
         if "CUDAExecutionProvider" in available:
-            selected_providers.append("CUDAExecutionProvider")
-            log.info("Kokoro TTS: CUDA detected. Running on GPU ✓")
+            gpu_opts = {
+                "device_id": 0,
+                "gpu_mem_limit": 1024 * 1024 * 1024,  # Cap VRAM at 1 GB
+                "cudnn_conv_algo_search": "HEURISTIC",
+                "arena_extend_strategy": "kSameAsRequested"
+            }
+            selected_providers.append(("CUDAExecutionProvider", gpu_opts))
+            log.info("Kokoro TTS: CUDA detected. Running on GPU (1 GB VRAM Limit) ✓")
         else:
             log.info("Kokoro TTS: CUDA not detected. Falling back to CPU.")
         selected_providers.append("CPUExecutionProvider")
@@ -136,50 +170,89 @@ def _play_worker():
     except Exception as e:
         log.exception(f"Failed to initialize Kokoro TTS engine: {e}")
         return
- 
+        
     while True:
         try:
-            text = _audio_queue.get()
-            if text is None:  # Shutdown signal
+            item = _text_queue.get()
+            if item is None:  # Shutdown signal
+                _audio_queue.put(None)
                 break
                 
-            if not text.strip():
-                _audio_queue.task_done()
+            text, gen_id = item
+            
+            with _generation_lock:
+                if gen_id != _active_generation_id:
+                    # Discard old generation
+                    _text_queue.task_done()
+                    continue
+            
+            cleaned_chunk = clean_text_for_tts(text)
+            if not cleaned_chunk.strip():
+                _text_queue.task_done()
                 continue
                 
-            log.info(f"Synthesizing speech: '{text[:60]}...'")
+            log.info(f"Synthesizing speech: '{cleaned_chunk[:60]}...'")
             try:
                 samples, sample_rate = _kokoro_engine.create(
-                    text,
+                    cleaned_chunk,
                     voice="af_sarah",
                     speed=1.0,
                     lang="en-us"
                 )
                 
-                # Reshape mono 1D array to 2D
-                if samples.ndim == 1:
-                    samples_2d = samples.reshape(-1, 1)
-                else:
-                    samples_2d = samples
+                with _generation_lock:
+                    if gen_id == _active_generation_id:
+                        _audio_queue.put((samples, sample_rate, gen_id))
+            except Exception as ex:
+                log.error(f"Error during speech synthesis: {ex}")
                 
-                log.info("Playing synthesized audio...")
+            _text_queue.task_done()
+        except Exception as e:
+            log.error(f"Voice synthesis worker thread loop hit an error: {e}")
+
+
+def _play_worker():
+    global _active_stream, _main_loop
+    import sounddevice as sd
+    
+    while True:
+        try:
+            item = _audio_queue.get()
+            if item is None:  # Shutdown signal
+                break
+                
+            samples, sample_rate, gen_id = item
+            
+            with _generation_lock:
+                if gen_id != _active_generation_id:
+                    _audio_queue.task_done()
+                    continue
+            
+            # Reshape mono 1D array to 2D
+            if samples.ndim == 1:
+                samples_2d = samples.reshape(-1, 1)
+            else:
+                samples_2d = samples
+            
+            log.info("Playing synthesized audio...")
+            try:
                 _active_stream = sd.OutputStream(samplerate=sample_rate, channels=1, dtype='float32')
                 with _active_stream:
                     _active_stream.write(samples_2d)
                 _active_stream = None
             except Exception as ex:
-                log.error(f"Error during speech synthesis or playback: {ex}")
+                log.error(f"Error during audio playback: {ex}")
                 _active_stream = None
                 
             _audio_queue.task_done()
             
-            # Transition to IDLE state once queue becomes empty
-            if _audio_queue.empty() and _main_loop:
+            # Transition to IDLE state once queues become empty
+            if _text_queue.empty() and _audio_queue.empty() and _main_loop:
                 _main_loop.call_soon_threadsafe(
                     lambda: asyncio.create_task(brain.state_machine.transition(State.IDLE))
                 )
         except Exception as e:
-            log.error(f"Voice worker thread loop hit an error: {e}")
+            log.error(f"Voice playback worker thread loop hit an error: {e}")
             _active_stream = None
  
 async def handle_speak(args: dict) -> dict:
@@ -189,12 +262,17 @@ async def handle_speak(args: dict) -> dict:
         
     log.info(f"Queuing speak request: '{text[:60]}...'")
     await brain.state_machine.transition(State.SPEAKING)
-    _audio_queue.put(text)
+    with _generation_lock:
+        _text_queue.put((text, _active_generation_id))
     return {"status": "queued"}
 
 async def handle_stop_speak(args: dict) -> dict:
-    global _active_stream
+    global _active_stream, _active_generation_id
     log.info("Stopping speak playback...")
+    
+    with _generation_lock:
+        # Increment generation to invalidate all active and future queue items from previous run
+        _active_generation_id += 1
     
     # 1. Abort stream if active
     if _active_stream is not None:
@@ -203,7 +281,15 @@ async def handle_stop_speak(args: dict) -> dict:
         except Exception as e:
             log.warning(f"Error aborting stream: {e}")
             
-    # 2. Clear the audio queue
+    # 2. Clear the text queue
+    while not _text_queue.empty():
+        try:
+            _text_queue.get_nowait()
+            _text_queue.task_done()
+        except Exception:
+            pass
+            
+    # 3. Clear the audio queue
     while not _audio_queue.empty():
         try:
             _audio_queue.get_nowait()
@@ -214,7 +300,7 @@ async def handle_stop_speak(args: dict) -> dict:
     return {"status": "stopped"}
  
 def register():
-    global _worker_thread, _main_loop
+    global _synthesis_thread, _playback_thread, _main_loop
     bus.register("speak", handle_speak)
     bus.register("stop_speak", handle_stop_speak)
     
@@ -223,7 +309,11 @@ def register():
     except RuntimeError:
         _main_loop = None
         
+    # Start synthesis worker thread
+    _synthesis_thread = threading.Thread(target=_synthesis_worker, daemon=True)
+    _synthesis_thread.start()
+    
     # Start playback worker thread
-    _worker_thread = threading.Thread(target=_play_worker, daemon=True)
-    _worker_thread.start()
+    _playback_thread = threading.Thread(target=_play_worker, daemon=True)
+    _playback_thread.start()
     log.info("Voice agent registered ✓")

@@ -435,9 +435,10 @@ async def unified_stream_call(
                         # Definitely plain text conversational
                         is_agentic = False
                         log.info("Unified stream → CONVERSATIONAL mode detected (plain text)")
-                
-                # If it's conversational, stream text out to callback and sentence buffer
-                if is_agentic == False:
+                        if on_text_chunk:
+                            on_text_chunk(full_content)
+                        sentence_streamer.add_chunk(full_content)
+                elif is_agentic == False:
                     if on_text_chunk:
                         on_text_chunk(content_chunk)
                     sentence_streamer.add_chunk(content_chunk)
