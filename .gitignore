@@ -1,16 +1,78 @@
-venv
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-*.db
-*.sqlite3
+# Mr Meeseeks - Git Ignore Rules
+
+# Python-specific ignores
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Model files & weights
+models/
+*.safetensors
+*.gguf
+*.bin
+*.pt
+*.ckpt
+
+# Output, logging, and caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+logs/outputs/
+logs/raw/
 *.log
+
+# Keep the finetune dataset but ignore other files in logs
+# logs/
+# !logs/finetune/
+# !logs/finetune/dataset.jsonl
+
+# Operating System specific files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs and Editors
 .vscode/
-*.env
-models
-
-temp/meeseeks-functiongemma-ft
-temp/meeseeks-gemma-merged
-
+.idea/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
