@@ -155,13 +155,13 @@ def main():
 
     sft_extra_kwargs = {}
     if HAS_SFT_CONFIG:
-        training_kwargs["max_length"] = 512
+        training_kwargs["max_length"] = 1536
         training_kwargs["dataset_text_field"] = "text"
         trainer_args = SFTConfig(**training_kwargs)
     else:
         # Standard TrainingArguments don't accept max_seq_length, SFTTrainer accepts it directly
         trainer_args = TrainingArguments(**training_kwargs)
-        sft_extra_kwargs["max_seq_length"] = 512
+        sft_extra_kwargs["max_seq_length"] = 1536
         sft_extra_kwargs["dataset_text_field"] = "text"
 
     # 6. Initialize SFTTrainer

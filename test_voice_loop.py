@@ -131,23 +131,47 @@ def clean_text_for_tts(text: str) -> str:
     return text
 
 # ── Workers ───────────────────────────────────────────────────────────────────
-def playback_worker(audio_queue):
+def playback_worker(audio_queue, playback_stream_ref):
     global first_audio_played_time
     import sounddevice as sd
     
-    while True:
-        item = audio_queue.get()
-        if item is None:
-            break
+    stream = None
+    try:
+        while True:
+            item = audio_queue.get()
+            if item is None:
+                break
+                
+            samples, sample_rate = item
             
-        samples, sample_rate = item
-        if first_audio_played_time is None:
-            first_audio_played_time = time.time()
-            print(f"\n[Playback] Playing audio (latency: {first_audio_played_time - start_time:.3f}s from LLM generation start)")
-            
-        sd.play(samples, sample_rate)
-        sd.wait()
-        audio_queue.task_done()
+            if stream is None:
+                # Open output stream once for the session using correct sample rate
+                stream = sd.OutputStream(samplerate=sample_rate, channels=1, dtype='float32')
+                stream.start()
+                playback_stream_ref[0] = stream
+                
+            if first_audio_played_time is None:
+                first_audio_played_time = time.time()
+                print(f"\n[Playback] Playing audio (latency: {first_audio_played_time - start_time:.3f}s from LLM generation start)")
+                
+            # Reshape mono 1D array to 2D (frames, 1) for sounddevice OutputStream
+            if samples.ndim == 1:
+                samples_2d = samples.reshape(-1, 1)
+            else:
+                samples_2d = samples
+                
+            stream.write(samples_2d)
+            audio_queue.task_done()
+    except Exception:
+        pass
+    finally:
+        if stream is not None:
+            try:
+                stream.stop()
+                stream.close()
+            except Exception:
+                pass
+            playback_stream_ref[0] = None
 
 def synthesis_worker(kokoro_gpu, kokoro_cpu, use_dynamic_cap, voice, speed, text_queue, audio_queue):
     global sentence_count
@@ -271,7 +295,7 @@ async def stream_ollama(user_text, url, model):
                     pass
 
 # ── Text Chunking Loop ────────────────────────────────────────────────────────
-async def run_streaming_pipeline(user_text, backend, api_key, ollama_url, model):
+async def run_streaming_pipeline(user_text, backend, api_key, ollama_url, model, text_queue):
     buffer = ""
     sentence_ends = {".", "!", "?", "\n"}
     
@@ -315,32 +339,36 @@ async def run_streaming_pipeline(user_text, backend, api_key, ollama_url, model)
     # Signal synthesis thread that text stream is done
     text_queue.put(None)
 
-def voice_interrupt_worker(whisper_model, voice_interrupt_flag, stop_listening_event):
+def voice_interrupt_worker(whisper_model, voice_interrupt_flag, stop_listening_event, shared_audio_data, audio_lock):
     """
     Background worker that listens to the microphone while Mr Meeseeks is speaking/thinking,
-    and sets voice_interrupt_flag if it hears the user speak 3+ words.
+    appends audio to shared_audio_data, and sets voice_interrupt_flag if it hears the user speak 3+ words.
     """
     import sounddevice as sd
     
-    audio_buffer = []
-    
     def callback(indata, frames, time, status):
-        audio_buffer.append(indata.copy())
+        with audio_lock:
+            shared_audio_data.append(indata.copy())
         
     sample_rate = 16000
-    # Keep last 1.5 seconds of audio (1.5 * 16000 = 24000 samples)
+    # Keep last 1.5 seconds of audio for VAD checking (1.5 * 16000 = 24000 samples)
     max_samples = int(sample_rate * 1.5)
     
     try:
         stream = sd.InputStream(samplerate=sample_rate, channels=1, callback=callback)
         with stream:
+            # First phase: check for user speaking while AI is responding
             while not stop_listening_event.is_set() and not voice_interrupt_flag.is_set():
                 time.sleep(0.4)
-                if not audio_buffer:
-                    continue
+                
+                # Make a thread-safe copy of the shared list
+                with audio_lock:
+                    if not shared_audio_data:
+                        continue
+                    shared_audio_data_copy = list(shared_audio_data)
                     
                 # Concatenate buffer contents
-                current_audio = np.concatenate(audio_buffer, axis=0).flatten()
+                current_audio = np.concatenate(shared_audio_data_copy, axis=0).flatten()
                 
                 # Slice to retain only the last 1.5s
                 if len(current_audio) > max_samples:
@@ -358,11 +386,16 @@ def voice_interrupt_worker(whisper_model, voice_interrupt_flag, stop_listening_e
                         hallucinations = {"thank you", "thanks for", "you for watching", "subtitles by", "please subscribe", "watching"}
                         is_hallucination = any(h in text.lower() for h in hallucinations)
                         if not is_hallucination:
-                            print(f"\n🗣️  [Voice Interrupt] Heard: '{text}' (Triggering stop...)")
+                            print(f"\n🗣️  [Voice Interrupt] Heard: '{text}'")
                             voice_interrupt_flag.set()
                             break
-    except Exception:
-        pass
+                            
+            # Second phase: if we were interrupted by voice, we keep the stream open
+            # and just append audio until stop_listening_event is set by the main thread.
+            while not stop_listening_event.is_set():
+                time.sleep(0.1)
+    except Exception as e:
+        print(f"\n[Error in Voice Interrupt Worker] {e}")
 
 import select
 
@@ -482,20 +515,58 @@ async def main():
     print("  3. Press ENTER again to stop recording and send your query.")
     print("  4. Type 'exit' and press Enter to quit.\n")
     
-    # Event loop
+    # Event loop state
+    interrupted_by_voice = False
+    shared_audio_data = []
+    vi_thread = None
+    stop_listening_event = None
+    audio_lock = threading.Lock()
+    
     while True:
         try:
-            cmd = input("Press ENTER to speak (or type 'exit' to quit): ").strip().lower()
-            if cmd == "exit":
-                break
+            if not interrupted_by_voice:
+                cmd = input("Press ENTER to speak (or type 'exit' to quit): ").strip().lower()
+                if cmd == "exit":
+                    break
+                    
+                # Record and transcribe
+                user_text = voice_input_mgr.record_and_transcribe()
+                if not user_text:
+                    print("[System] No speech detected. Try again.")
+                    continue
+            else:
+                # We were interrupted by voice, so we are already recording!
+                # We just wait for the user to press ENTER to stop recording.
+                print("\n🎙️  [Meeseeks] Listening... Press ENTER to stop recording.")
+                input()  # Blocks until user presses Enter
                 
-            # Record and transcribe
-            user_text = voice_input_mgr.record_and_transcribe()
-            if not user_text:
-                print("[System] No speech detected. Try again.")
-                continue
+                # Signal the listener thread to stop (this closes the stream)
+                if stop_listening_event:
+                    stop_listening_event.set()
+                if vi_thread:
+                    vi_thread.join(timeout=2.0)
                 
-            print(f"\nYou (Voice): {user_text}")
+                # Transcribe the accumulated audio data
+                with audio_lock:
+                    if shared_audio_data:
+                        audio = np.concatenate(shared_audio_data, axis=0).flatten()
+                        print("[System] Transcribing your full input...")
+                        segments, _ = voice_input_mgr.model.transcribe(audio, beam_size=1)
+                        user_text = " ".join([seg.text for seg in segments]).strip()
+                    else:
+                        user_text = ""
+                
+                # Reset event loop state
+                interrupted_by_voice = False
+                shared_audio_data = []
+                vi_thread = None
+                stop_listening_event = None
+                
+                if not user_text:
+                    print("[System] No speech detected. Try again.")
+                    continue
+                print(f"\nYou (Voice): {user_text}")
+                
             print("[Meeseeks] Thinking...", flush=True)
             
             # Reset timing & sentence variables
@@ -504,79 +575,110 @@ async def main():
             start_time = time.time()
             sentence_count = 0
             
+            # Create session-specific queues
+            session_text_queue = queue.Queue()
+            session_audio_queue = queue.Queue(maxsize=3)
+            
+            playback_stream_ref = [None]
+            
             # Start worker threads
-            s_thread = threading.Thread(target=synthesis_worker, args=(kokoro_gpu, kokoro_cpu, use_dynamic_cap, args.voice, args.speed), daemon=True)
-            p_thread = threading.Thread(target=playback_worker, daemon=True)
+            s_thread = threading.Thread(
+                target=synthesis_worker,
+                args=(kokoro_gpu, kokoro_cpu, use_dynamic_cap, args.voice, args.speed, session_text_queue, session_audio_queue),
+                daemon=True
+            )
+            p_thread = threading.Thread(
+                target=playback_worker,
+                args=(session_audio_queue, playback_stream_ref),
+                daemon=True
+            )
             s_thread.start()
             p_thread.start()
             
             # Start background voice interrupt listener if enabled
             voice_interrupt_flag = threading.Event()
             stop_listening_event = threading.Event()
+            shared_audio_data = []
             vi_thread = None
             if voice_interrupt_enabled:
                 vi_thread = threading.Thread(
                     target=voice_interrupt_worker,
-                    args=(voice_input_mgr.model, voice_interrupt_flag, stop_listening_event),
+                    args=(voice_input_mgr.model, voice_interrupt_flag, stop_listening_event, shared_audio_data, audio_lock),
                     daemon=True
                 )
                 vi_thread.start()
                 
             # Run the generation pipeline in the background
             pipeline_task = asyncio.create_task(
-                run_streaming_pipeline(user_text, args.backend, api_key, ollama_url, llm_model)
+                run_streaming_pipeline(user_text, args.backend, api_key, ollama_url, llm_model, session_text_queue)
             )
             
-            # Non-blocking wait loop that monitors for user ENTER interrupts
-            print(f"--- {'Press ENTER or speak 3+ words to interrupt' if voice_interrupt_enabled else 'Press ENTER to interrupt'} ---")
-            if voice_interrupt_enabled:
-                print("[System] Voice interrupt active. (Use headphones to prevent speaker feedback!)")
-                
             interrupted = False
-            while True:
-                key_interrupt = check_stdin_interrupt()
-                voice_interrupt = voice_interrupt_flag.is_set()
-                
-                if key_interrupt or voice_interrupt:
-                    print("\n🛑 [Interrupt] Stopping Mr Meeseeks speech and clearing queues...")
-                    interrupted = True
+            try:
+                # Non-blocking wait loop that monitors for user ENTER interrupts
+                print(f"--- {'Press ENTER or speak 3+ words to interrupt' if voice_interrupt_enabled else 'Press ENTER to interrupt'} ---")
+                if voice_interrupt_enabled:
+                    print("[System] Voice interrupt active. (Use headphones to prevent speaker feedback!)")
                     
-                    # Stop audio immediately
-                    import sounddevice as sd
-                    sd.stop()
+                while True:
+                    key_interrupt = check_stdin_interrupt()
+                    voice_interrupt = voice_interrupt_flag.is_set()
                     
-                    # Clear queues
-                    while not text_queue.empty():
+                    if key_interrupt or voice_interrupt:
+                        interrupted = True
+                        
+                        # Stop audio playback immediately without affecting recording
+                        if playback_stream_ref[0] is not None:
+                            try:
+                                playback_stream_ref[0].abort()
+                            except Exception:
+                                pass
+                        
+                        # Clear queues
+                        while not session_text_queue.empty():
+                            try:
+                                session_text_queue.get_nowait()
+                                session_text_queue.task_done()
+                            except (queue.Empty, ValueError):
+                                pass
+                        while not session_audio_queue.empty():
+                            try:
+                                session_audio_queue.get_nowait()
+                                session_audio_queue.task_done()
+                            except (queue.Empty, ValueError):
+                                pass
+                                
+                        # Force exit worker loops
                         try:
-                            text_queue.get_nowait()
-                            text_queue.task_done()
-                        except (queue.Empty, ValueError):
+                            session_text_queue.put_nowait(None)
+                        except queue.Full:
                             pass
-                    while not audio_queue.empty():
                         try:
-                            audio_queue.get_nowait()
-                            audio_queue.task_done()
-                        except (queue.Empty, ValueError):
+                            session_audio_queue.put_nowait(None)
+                        except queue.Full:
                             pass
-                            
-                    # Force exit worker loops
-                    text_queue.put(None)
-                    audio_queue.put(None)
+                        
+                        # Cancel the streaming pipeline
+                        pipeline_task.cancel()
+                        
+                        if voice_interrupt:
+                            interrupted_by_voice = True
+                            print("\n🛑 [Voice Interrupt] Stopping Meeseeks speech. Continue speaking...")
+                        else:
+                            interrupted_by_voice = False
+                            print("\n🛑 [Manual Interrupt] Stopping Meeseeks speech...")
+                        break
                     
-                    # Stop background voice listener
-                    stop_listening_event.set()
-                    
-                    # Cancel the streaming pipeline
-                    pipeline_task.cancel()
-                    break
-                
-                # Exit loop if both worker threads have naturally finished
-                if not s_thread.is_alive() and not p_thread.is_alive():
-                    # Stop background voice listener
-                    stop_listening_event.set()
-                    break
-                    
-                await asyncio.sleep(0.05)
+                    # Exit loop if both worker threads have naturally finished
+                    if not s_thread.is_alive() and not p_thread.is_alive():
+                        break
+                        
+                    await asyncio.sleep(0.05)
+            finally:
+                # Always ensure the background listener is stopped, unless it's a voice interrupt
+                if not interrupted_by_voice:
+                    if stop_listening_event:
+                        stop_listening_event.set()
                 
             if not interrupted:
                 # Wait for threads to naturally clean up
@@ -586,9 +688,13 @@ async def main():
             print(f"[System] Completed in {time.time() - start_time:.2f}s.\n")
             
         except KeyboardInterrupt:
+            if stop_listening_event:
+                stop_listening_event.set()
             print("\nExiting...")
             break
         except Exception as e:
+            if stop_listening_event:
+                stop_listening_event.set()
             print(f"\n[System] Loop encountered an error: {e}\n")
             
     print("Goodbye!")

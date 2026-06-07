@@ -21,7 +21,33 @@ def main():
     )
 
     # Match the SFT training dataset formatting
+    import os
+    import sys
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from core.schema_registry import TOOL_SCHEMAS, REQUIRED_ARGS
+
+    tool_defs = []
+    for t_name, t_schema in TOOL_SCHEMAS.items():
+        reqs = REQUIRED_ARGS.get(t_name, [])
+        params_desc = []
+        for p_name, p_desc in t_schema.get("args", {}).items():
+            req_suffix = " (required)" if p_name in reqs else ""
+            params_desc.append(f"    {p_name}: {p_desc}{req_suffix}")
+        
+        params_str = "\n" + "\n".join(params_desc) if params_desc else " None"
+        tool_defs.append(
+            f"- name: {t_name}\n"
+            f"  description: {t_schema.get('description', '')}\n"
+            f"  params:{params_str}"
+        )
+    
+    dev_content = (
+        "You are a model that can do function calling with the following functions\n"
+        + "\n".join(tool_defs)
+    )
+
     messages = [
+        {"role": "developer", "content": dev_content},
         {"role": "user", "content": f"---\nUSER REQUEST: {args.prompt}"}
     ]
     
