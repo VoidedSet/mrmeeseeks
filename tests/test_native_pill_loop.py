@@ -1,4 +1,7 @@
 import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import asyncio
 from PyQt6.QtWidgets import QApplication
 from core.ui.overlay import UIOverlay

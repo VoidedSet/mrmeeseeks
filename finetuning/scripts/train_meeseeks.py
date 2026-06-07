@@ -37,7 +37,7 @@ except ImportError:
 def main():
     parser = argparse.ArgumentParser(description="Fine-tune FunctionGemma for Mr Meeseeks.")
     parser.add_argument("--model-id", default="google/functiongemma-270m-it", help="Base model ID on Hugging Face")
-    parser.add_argument("--dataset", default="temp/meeseeks_yaml_dataset_chatml.jsonl", help="Dataset file path")
+    parser.add_argument("--dataset", default="finetuning/data/meeseeks_functiongemma_dataset_v2.jsonl", help="Dataset file path")
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=4, help="Batch size per device")
     parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate (higher for LoRA)")
@@ -69,19 +69,23 @@ def main():
     print(f"Loaded a total of {len(records)} training records.")
 
     # Pre-format datasets using chat templates in python to avoid PyArrow nested schemas bugs
-    print("Formatting dataset with chat templates...")
+    print("Formatting dataset...")
     formatted_records = []
     for r in records:
-        try:
-            text = tokenizer.apply_chat_template(
-                r["messages"],
-                tools=r.get("tools"),
-                add_generation_prompt=False,
-                tokenize=False
-            )
-            formatted_records.append({"text": text})
-        except Exception as e:
-            print(f"Skipping a malformed record. Error: {e}")
+        if "text" in r:
+            # If the record is already formatted as raw text, use it directly
+            formatted_records.append({"text": r["text"]})
+        else:
+            try:
+                text = tokenizer.apply_chat_template(
+                    r["messages"],
+                    tools=r.get("tools"),
+                    add_generation_prompt=False,
+                    tokenize=False
+                )
+                formatted_records.append({"text": text})
+            except Exception as e:
+                print(f"Skipping a malformed record. Error: {e}")
 
     # Build HF dataset from simple flat string records
     formatted_dataset = Dataset.from_list(formatted_records)

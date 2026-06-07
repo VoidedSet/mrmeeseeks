@@ -57,7 +57,11 @@ logs/raw/
 # Keep the finetune dataset but ignore other files in logs
 # logs/
 # !logs/finetune/
-# !logs/finetune/dataset.jsonl
+# Memory cache files
+memory/store/*.json
+!memory/store/hello.json
+!memory/store/last_interaction.json
+!memory/store/what_can_you_do_.json
 
 # Operating System specific files
 .DS_Store

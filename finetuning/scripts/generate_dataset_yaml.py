@@ -275,7 +275,7 @@ async def main():
     parser.add_argument("--model", default="gemini-1.5-flash", help="Teacher LLM Model Name")
     parser.add_argument("--count", type=int, default=50, help="Target scenarios/queries per tool (default 50)")
     parser.add_argument("--dry-run", action="store_true", help="Only generate 2 examples of each type to verify format")
-    parser.add_argument("--output", default="temp/meeseeks_yaml_dataset.jsonl", help="Output file path")
+    parser.add_argument("--output", default="finetuning/data/meeseeks_yaml_dataset.jsonl", help="Output file path")
     parser.add_argument("--tools", default="", help="Comma-separated list of specific tools to generate (e.g., check_battery,run_bg_cmd)")
     parser.add_argument("--concurrency", type=int, default=2, help="Number of concurrent API requests (default 2)")
     parser.add_argument("--batch-size", type=int, default=5, help="Number of scenarios to generate per API call (default 5)")
@@ -394,6 +394,7 @@ async def main():
                     "type": "finalize",
                     "user_content": user_q,
                     "initial_tool_name": tool_name,
+                    "initial_tool_arguments": tool_args,
                     "tool_output": sim_out,
                     "speech": speech
                 })

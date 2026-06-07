@@ -1,5 +1,8 @@
-import logging
+import sys
 import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import logging
 from datetime import datetime
 
 def setup_file_logging():

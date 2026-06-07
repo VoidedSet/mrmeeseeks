@@ -369,8 +369,9 @@ async def main():
     from agents.eyes_agent import register as reg_eyes
     reg_eyes()
 
-    from agents.voice_agent import register as reg_voice
-    reg_voice()
+    if not args.cli:
+        from agents.voice_agent import register as reg_voice
+        reg_voice()
 
     # ── Wire brain ───────────────────────────────────────────────────────────
     from core.brain import brain
@@ -660,18 +661,8 @@ async def main():
 
                 print()
                 
-                # Feedback loop (only in text mode or completed voice mode)
-                if not interrupted_by_voice and brain.last_interaction:
-                    ans = (await async_input("Did it fulfill the request? (y/n) [y]: ")).strip().lower()
-                    user_success = ans != 'n'
-                    score_str = (await async_input("Quality score (1-5) [5]: ")).strip()
-                    try:
-                        score = int(score_str) if score_str else 5
-                    except ValueError:
-                        score = 5
-                    score = max(1, min(5, score))
-                    brain.log_finetune_sample(user_success, score)
-                    print()
+                # Clear last interaction state
+                brain.last_interaction = None
         finally:
             # Clean shutdown — cancel background task
             kernel_task.cancel()

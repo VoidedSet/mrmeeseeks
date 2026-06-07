@@ -58,11 +58,11 @@ def main():
     cmd = [
         "venv/bin/python",
         "-u",
-        "temp/generate_dataset_yaml.py",
+        "finetuning/scripts/generate_dataset_yaml.py",
         "--api-url", f"{api_url}/v1",
         "--model", model_name,
         "--count", str(args.count),
-        "--output", "temp/meeseeks_yaml_dataset.jsonl",
+        "--output", "finetuning/data/meeseeks_yaml_dataset.jsonl",
         "--concurrency", str(args.concurrency),
         "--batch-size", str(args.batch_size)
     ]

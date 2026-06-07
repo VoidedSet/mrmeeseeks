@@ -1,5 +1,11 @@
 import os
 import sys
+
+# Add project root to sys.path so core and other packages can be imported
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 import time
 import queue
 import threading
@@ -39,6 +45,8 @@ def preload_cuda_libs():
         return
         
     project_root = os.path.dirname(os.path.abspath(__file__))
+    if os.path.basename(project_root) == "tests":
+        project_root = os.path.dirname(project_root)
     site_packages = os.path.join(project_root, "venv", "lib", f"python{sys.version_info.major}.{sys.version_info.minor}", "site-packages")
     nvidia_dir = os.path.join(site_packages, "nvidia")
     
@@ -462,6 +470,8 @@ async def main():
     
     # 3. Initialize Kokoro ONNX on GPU (with 500MB VRAM limit) and CPU
     project_root = os.path.dirname(os.path.abspath(__file__))
+    if os.path.basename(project_root) == "tests":
+        project_root = os.path.dirname(project_root)
     model_path = os.path.join(project_root, "models", "kokoro-v1.0.fp16.onnx")
     voices_path = os.path.join(project_root, "models", "voices-v1.0.bin")
     
