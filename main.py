@@ -26,8 +26,12 @@ parser.add_argument("--debug", action="store_true", help="Verbose logging")
 parser.add_argument("--cli", action="store_true", help="Force command-line REPL mode")
 parser.add_argument("--voice", default="af_sarah", help="Kokoro voice (default: af_sarah)")
 parser.add_argument("--speed", type=float, default=1.1, help="Speech speed multiplier (default: 1.1)")
-parser.add_argument("--no-dynamic-cap", action="store_true",
-                    help="Disable dynamic CPU fallback compute cap for TTS after 2 sentences")
+parser.add_argument("--backend", choices=["groq", "ollama"], default=None,
+                    help="LLM backend choice: groq or ollama")
+parser.add_argument("--model", default=None,
+                    help="LLM model name")
+parser.add_argument("--dynamic-cap", action="store_true",
+                    help="Enable dynamic CPU fallback compute cap for TTS after 2 sentences")
 parser.add_argument("--no-voice-interrupt", action="store_true",
                     help="Disable voice-activated barge-in / interrupt")
 args = parser.parse_args()
@@ -344,6 +348,12 @@ def check_stdin_interrupt() -> bool:
 
 
 async def main():
+    # Propagate CLI arguments directly to environment variables before initializing the provider
+    if args.backend:
+        os.environ["LLM_BACKEND"] = args.backend
+    if args.model:
+        os.environ["LLM_MODEL"] = args.model
+
     # ── Init LLM provider ────────────────────────────────────────────────────
     from core.llm_provider import init_provider
     try:
@@ -422,7 +432,7 @@ async def main():
             log.info("Kokoro GPU Session ready ✓")
 
             kokoro_cpu = None
-            use_dynamic_cap = not args.no_dynamic_cap
+            use_dynamic_cap = args.dynamic_cap
             if use_dynamic_cap:
                 log.info("Loading Kokoro TTS Engine on CPU (for compute capping fallback)...")
                 cpu_sess = ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
@@ -661,8 +671,7 @@ async def main():
 
                 print()
                 
-                # Clear last interaction state
-                brain.last_interaction = None
+
         finally:
             # Clean shutdown — cancel background task
             kernel_task.cancel()
@@ -693,8 +702,36 @@ async def main():
         # Voice recording and toggle logic
         voice_stop_event = None
         voice_recording_task = None
+        brain_process_task = None
+
+        interrupted_by_voice = False
+        shared_audio_data = []
+        vi_thread = None
+        stop_listening_event = None
+        audio_lock = threading.Lock()
+        voice_interrupt_flag = threading.Event()
 
         async def handle_submit(prompt: str):
+            nonlocal brain_process_task
+            nonlocal interrupted_by_voice, shared_audio_data, vi_thread, stop_listening_event, voice_interrupt_flag
+            
+            # Start background interrupt worker if voice interrupts are enabled
+            voice_interrupt_enabled = not args.no_voice_interrupt
+            if voice_interrupt_enabled:
+                from core.voice_input import VoiceInputManager
+                voice_mgr = VoiceInputManager()
+                voice_mgr.load_model()
+                
+                voice_interrupt_flag.clear()
+                stop_listening_event = threading.Event()
+                shared_audio_data = []
+                vi_thread = threading.Thread(
+                    target=voice_interrupt_worker,
+                    args=(voice_mgr.model, voice_interrupt_flag, stop_listening_event, shared_audio_data, audio_lock),
+                    daemon=True
+                )
+                vi_thread.start()
+            
             full_text = ""
             def on_chunk(chunk: str):
                 nonlocal full_text
@@ -704,17 +741,48 @@ async def main():
                 asyncio.create_task(bus.dispatch("speak", {"text": sentence}))
 
             try:
-                await brain.process(prompt, on_chunk=on_chunk, on_sentence=on_sentence)
+                brain_process_task = asyncio.create_task(
+                    brain.process(prompt, on_chunk=on_chunk, on_sentence=on_sentence)
+                )
+                
+                if voice_interrupt_enabled:
+                    while not brain_process_task.done():
+                        if voice_interrupt_flag.is_set():
+                            # Stop speaking immediately
+                            await bus.dispatch("stop_speak", {})
+                            # Cancel the brain process
+                            brain_process_task.cancel()
+                            # Transition to LISTENING state
+                            interrupted_by_voice = True
+                            await brain.state_machine.transition(State.LISTENING)
+                            log.info("Voice barge-in triggered! Listening...")
+                            return
+                        await asyncio.sleep(0.05)
+                
+                await brain_process_task
+            except asyncio.CancelledError:
+                pass
             except Exception as e:
                 log.error(f"Brain process error: {e}")
+            finally:
+                # Always ensure the background listener is stopped if we weren't interrupted by voice
+                if not interrupted_by_voice:
+                    if stop_listening_event:
+                        stop_listening_event.set()
+                    if vi_thread:
+                        await asyncio.to_thread(vi_thread.join, timeout=1.0)
+                    vi_thread = None
+                    stop_listening_event = None
 
         async def toggle_voice():
-            nonlocal voice_stop_event, voice_recording_task
+            nonlocal voice_stop_event, voice_recording_task, brain_process_task
+            nonlocal interrupted_by_voice, shared_audio_data, vi_thread, stop_listening_event, voice_interrupt_flag
             from core.state_machine import State
             
             current_state = brain.state_machine.current
             
             if current_state == State.IDLE:
+                interrupted_by_voice = False
                 voice_stop_event = asyncio.Event()
                 await brain.state_machine.transition(State.LISTENING)
                 
@@ -735,12 +803,55 @@ async def main():
                 
                 voice_recording_task = asyncio.create_task(record_task())
             elif current_state == State.LISTENING:
-                if voice_stop_event:
-                    voice_stop_event.set()
+                if interrupted_by_voice:
+                    if stop_listening_event:
+                        stop_listening_event.set()
+                    if vi_thread:
+                        await asyncio.to_thread(vi_thread.join, timeout=2.0)
+                    
+                    from core.voice_input import VoiceInputManager
+                    voice_mgr = VoiceInputManager()
+                    voice_mgr.load_model()
+                    
+                    with audio_lock:
+                        if shared_audio_data:
+                            audio = np.concatenate(shared_audio_data, axis=0).flatten()
+                            print("[System] Transcribing your full input...")
+                            segments, _ = voice_mgr.model.transcribe(audio, beam_size=1)
+                            user_text = " ".join([seg.text for seg in segments]).strip()
+                        else:
+                            user_text = ""
+                    
+                    interrupted_by_voice = False
+                    shared_audio_data = []
+                    vi_thread = None
+                    stop_listening_event = None
+                    voice_interrupt_flag.clear()
+                    
+                    if user_text:
+                        log.info(f"Voice query (interrupted): {user_text}")
+                        await handle_submit(user_text)
+                    else:
+                        await brain.state_machine.transition(State.IDLE)
+                else:
+                    if voice_stop_event:
+                        voice_stop_event.set()
             else:
                 # Cancel thinking/acting/speaking and go back to Idle
                 if voice_recording_task and not voice_recording_task.done():
                     voice_recording_task.cancel()
+                if brain_process_task and not brain_process_task.done():
+                    brain_process_task.cancel()
+                await bus.dispatch("stop_speak", {})
+                if vi_thread:
+                    if stop_listening_event:
+                        stop_listening_event.set()
+                    await asyncio.to_thread(vi_thread.join, timeout=1.0)
+                interrupted_by_voice = False
+                shared_audio_data = []
+                vi_thread = None
+                stop_listening_event = None
+                voice_interrupt_flag.clear()
                 overlay.dismiss()
                 await brain.state_machine.transition(State.IDLE)
 

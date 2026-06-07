@@ -1,8 +1,8 @@
 {
   "data": {
-    "user": "Hello Mr. Me6, what can you do?",
-    "response": "I got stuck repeating the same action and couldn't finish. Please try rephrasing.",
-    "ts": "2026-06-07T23:46:22.594348"
+    "user": "Hello",
+    "response": "Sorry, something went wrong: Server error '500 Internal Server Error' for url 'http://localhost:11434/api/chat'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500",
+    "ts": "2026-06-08T01:18:45.947424"
   },
-  "updated_at": "2026-06-07T23:46:22.594472"
+  "updated_at": "2026-06-08T01:18:45.955899"
 }

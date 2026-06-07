@@ -950,25 +950,7 @@ class Brain:
         await self.state_machine.transition(State.IDLE)
         return speech
 
-    def log_finetune_sample(self, user_success: bool, score: int):
-        if not self.last_interaction:
-            return
-        
-        # Merge system success (did it complete loop) with user success (did it do what they wanted)
-        self.last_interaction["system_success"] = self.last_interaction["success"]
-        self.last_interaction["user_success"] = user_success
-        self.last_interaction["score"] = score
-        self.last_interaction["success"] = self.last_interaction["system_success"] and user_success
-        
-        try:
-            os.makedirs("logs/finetune", exist_ok=True)
-            with open("logs/finetune/dataset.jsonl", "a") as f:
-                f.write(json.dumps(self.last_interaction) + "\n")
-            log.info("Saved finetune sample.")
-        except Exception as e:
-            log.warning(f"Failed to save finetune sample: {e}")
-        
-        self.last_interaction = None
+
 
     async def handle_proactive_event(self, event: dict):
         """Called by kernel listeners for proactive alerts."""
