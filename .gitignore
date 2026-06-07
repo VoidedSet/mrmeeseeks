@@ -10,3 +10,7 @@ __pycache__
 .vscode/
 *.env
 models
+
+temp/meeseeks-functiongemma-ft
+temp/meeseeks-gemma-merged
+
