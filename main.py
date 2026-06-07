@@ -260,22 +260,13 @@ async def main():
         hotkey_monitor.triggered.connect(lambda: asyncio.create_task(toggle_voice()))
         hotkey_monitor.start()
 
-        # Left-click on status pill toggles voice recording
-        overlay.pill.clicked.connect(lambda: asyncio.create_task(toggle_voice()))
+        # Left-click on status pill toggles voice recording (routed via D-Bus)
+        overlay.clicked.connect(lambda: asyncio.create_task(toggle_voice()))
 
-        # Right-click toggles settings panel below the pill
-        def show_panel_below_pill():
-            pill_pos = overlay.pill.pos()
-            px = pill_pos.x() + overlay.pill.width() // 2 - panel.width() // 2
-            py = pill_pos.y() + overlay.pill.height() + 4
-            panel.move(px, py)
-            panel.show()
-            panel.raise_()
-            panel.activateWindow()
-            from core.ui.effects import fade_in
-            fade_in(panel)
-
-        overlay.pill.right_clicked.connect(show_panel_below_pill)
+        # Right-click panel positioning is deprecated for the native GNOME Top Bar extension.
+        # The control panel can be toggled via the global hotkey or the system tray menu.
+        # def show_panel_below_pill():
+        #     pass
 
         # Wire state machine changes to UI status pill updates
         brain.state_machine.listeners.append(overlay.update_state)

@@ -31,6 +31,8 @@ def main():
     parser.add_argument("--url", default=API_URL, help="Ngrok API URL")
     parser.add_argument("--concurrency", type=int, default=2, help="Number of concurrent API requests (default 2)")
     parser.add_argument("--tools", default="", help="Comma-separated list of tools to generate")
+    parser.add_argument("--batch-size", type=int, default=5, help="Number of scenarios to generate per API call (default 5)")
+    parser.add_argument("--count", type=int, default=50, help="Number of scenarios to generate per tool (default 50)")
     args = parser.parse_args()
     
     api_url = args.url.rstrip("/")
@@ -59,9 +61,10 @@ def main():
         "temp/generate_dataset_yaml.py",
         "--api-url", f"{api_url}/v1",
         "--model", model_name,
-        "--count", "50",
+        "--count", str(args.count),
         "--output", "temp/meeseeks_yaml_dataset.jsonl",
-        "--concurrency", str(args.concurrency)
+        "--concurrency", str(args.concurrency),
+        "--batch-size", str(args.batch_size)
     ]
     if args.tools:
         cmd.extend(["--tools", args.tools])

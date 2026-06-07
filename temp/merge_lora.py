@@ -1,11 +1,18 @@
+import argparse
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 
 def main():
-    base_model_id = "google/functiongemma-270m-it"
-    adapter_dir = "/media/kshayik/New Volume/meeseeks_training_out"
-    output_dir = "/media/kshayik/New Volume/meeseeks_gemma_merged"
+    parser = argparse.ArgumentParser(description="Merge LoRA adapter weights into base model.")
+    parser.add_argument("--base-model", default="google/functiongemma-270m-it", help="Base model ID or path")
+    parser.add_argument("--adapter-dir", default="temp/meeseeks-functiongemma-ft", help="LoRA adapter checkpoint directory")
+    parser.add_argument("--output-dir", default="temp/meeseeks-gemma-merged", help="Output directory for merged model")
+    args = parser.parse_args()
+
+    base_model_id = args.base_model
+    adapter_dir = args.adapter_dir
+    output_dir = args.output_dir
 
     print("Loading base model...")
     base_model = AutoModelForCausalLM.from_pretrained(

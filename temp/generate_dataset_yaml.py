@@ -255,7 +255,7 @@ def convert_flat_to_chatml(entry: dict) -> dict:
             # Model first did the initiate call
             {"role": "assistant", "content": f"call: {entry.get('initial_tool_name', 'tool')}\nargs: ..."},
             # System provides the observation
-            {"role": "tool", "content": entry["tool_output"]},
+            {"role": "tool", "name": entry.get("initial_tool_name", "tool"), "content": str(entry["tool_output"]) if entry["tool_output"] is not None else ""},
             # Assistant outputs the final Speech
             {"role": "assistant", "content": format_as_yaml("none", speech=entry["speech"])}
         ])
@@ -278,6 +278,7 @@ async def main():
     parser.add_argument("--output", default="temp/meeseeks_yaml_dataset.jsonl", help="Output file path")
     parser.add_argument("--tools", default="", help="Comma-separated list of specific tools to generate (e.g., check_battery,run_bg_cmd)")
     parser.add_argument("--concurrency", type=int, default=2, help="Number of concurrent API requests (default 2)")
+    parser.add_argument("--batch-size", type=int, default=5, help="Number of scenarios to generate per API call (default 5)")
     
     args = parser.parse_args()
     
@@ -295,7 +296,7 @@ async def main():
     print(f"[*] Concurrency limit: {args.concurrency}")
     
     # 50 per tool in batches of 5 means 10 batches
-    batch_size = 5
+    batch_size = args.batch_size
     if args.count < batch_size:
         batch_size = args.count
         

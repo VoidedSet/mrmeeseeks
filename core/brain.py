@@ -974,6 +974,11 @@ class Brain:
         """Called by kernel listeners for proactive alerts."""
         self.push_kernel_event(event)
 
+        # Only trigger proactive LLM loops for urgent alerts (e.g. low battery)
+        # to prevent background loops on frequent events (window focus, window list updates).
+        if event.get("type") not in {"low_battery"}:
+            return
+
         if self.state_machine.current != State.IDLE:
             log.info(f"Proactive event queued (busy): {event}")
             return

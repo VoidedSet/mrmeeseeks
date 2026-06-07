@@ -1,21 +1,24 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QObject, Qt, pyqtSignal
-from PyQt6.QtGui import QCursor
+import logging
+from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt6.QtDBus import QDBusConnection, QDBusInterface
 
 from core.ui.cursor import BlueCursor
-from core.ui.top_bar_pill import TopBarPill
 from core.state_machine import State
+
+log = logging.getLogger("ui_overlay")
 
 
 class UIOverlay(QObject):
     """Coordinator for the top-bar status segment.
     
-    Exposes topbar state transitions and deprecates/hides cursor tracking.
+    Exposes topbar state transitions over DBus and deprecates/hides cursor tracking.
     """
 
     prompt_submitted = pyqtSignal(str)
     overlay_dismissed = pyqtSignal()
+    clicked = pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -24,19 +27,46 @@ class UIOverlay(QObject):
         self._cursor = BlueCursor()
         self._cursor.hide()
 
-        self._pill = TopBarPill()
-        self._pill.show()
+        # Connect to DBus session bus
+        self._bus = QDBusConnection.sessionBus()
+        self._interface = None
+        
+        if self._bus.isConnected():
+            self._interface = QDBusInterface("org.meeseeks.Pill", "/org/meeseeks/Pill", "org.meeseeks.Pill", self._bus)
+            # Connect to Clicked signal from any sender
+            connected = self._bus.connect(
+                None,  # service (None means any sender is matched, which is robust)
+                "/org/meeseeks/Pill",
+                "org.meeseeks.Pill",
+                "Clicked",
+                self.on_dbus_clicked
+            )
+            if connected:
+                log.info("UIOverlay connected to GNOME Pill Clicked D-Bus signal ✓")
+            else:
+                log.warning("UIOverlay failed to connect to GNOME Pill Clicked D-Bus signal!")
+        else:
+            log.warning("D-Bus not connected — GNOME extension integration disabled")
 
         # Initial state
-        self._pill.update_state(State.IDLE)
+        self.update_state(State.IDLE)
 
-    @property
-    def pill(self) -> TopBarPill:
-        return self._pill
+    @pyqtSlot()
+    def on_dbus_clicked(self) -> None:
+        log.info("GNOME Pill Clicked signal received over D-Bus!")
+        self.clicked.emit()
 
     def update_state(self, state: State) -> None:
         """Called when the brain's state machine changes state."""
-        self._pill.update_state(state)
+        state_str = state.value.lower()
+        # Map state names to the values expected by GNOME extension
+        if state == State.ACTING:
+            state_str = "acting"  # Map ACTING -> acting (Working)
+            
+        if self._interface and self._interface.isValid():
+            self._interface.call("SetState", state_str)
+        else:
+            log.warning(f"Could not update GNOME Pill state over DBus: Interface invalid (State: {state_str})")
 
     def show_input_near_cursor(self) -> None:
         # Text input card is removed
@@ -67,7 +97,6 @@ class UIOverlay(QObject):
         
     def close(self) -> None:
         self._cursor.close()
-        self._pill.close()
-
-    def _handle_input_submit(self, prompt: str) -> None:
-        self.prompt_submitted.emit(prompt)
+        # Reset to idle on close
+        if self._interface and self._interface.isValid():
+            self._interface.call("SetState", "idle")

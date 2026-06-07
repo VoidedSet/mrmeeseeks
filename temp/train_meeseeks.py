@@ -91,6 +91,14 @@ def main():
     print(f"Train split size: {len(split_dataset['train'])}")
     print(f"Val split size: {len(split_dataset['test'])}")
 
+    # Set VRAM allocation cap
+    if torch.cuda.is_available():
+        total_vram = torch.cuda.get_device_properties(0).total_memory
+        target_limit = 3.3 * (1024**3)  # 3.3 GB in bytes
+        fraction = min(0.85, target_limit / total_vram)
+        torch.cuda.set_per_process_memory_fraction(fraction, 0)
+        print(f"[*] CUDA memory allocation cap set to {fraction:.2f} of total VRAM (~{fraction*total_vram/(1024**3):.2f} GB)")
+
     # Load model
     print(f"Loading model: {args.model_id}")
     
