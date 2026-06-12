@@ -24,7 +24,7 @@ except ImportError:
 parser = argparse.ArgumentParser(description="Mr Meeseeks — AI OS Companion")
 parser.add_argument("--debug", action="store_true", help="Verbose logging")
 parser.add_argument("--cli", action="store_true", help="Force command-line REPL mode")
-parser.add_argument("--voice", default="jf_alpha", help="Kokoro voice (default: jf_alpha)")
+parser.add_argument("--voice", default="af_sarah", help="Kokoro voice (default: af_sarah)")
 parser.add_argument("--speed", type=float, default=1.1, help="Speech speed multiplier (default: 1.1)")
 parser.add_argument("--backend", choices=["groq", "ollama"], default=None,
                     help="LLM backend choice: groq or ollama")
@@ -46,7 +46,6 @@ logging.basicConfig(
     ]
 )
 log = logging.getLogger("main")
-logging.getLogger("faster_whisper").setLevel(logging.WARNING)
 
 # ── Log output to file too ────────────────────────────────────────────────────
 import os as _os
@@ -75,47 +74,6 @@ def _blocking_input(prompt: str) -> str:
 async def async_input(prompt: str) -> str:
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(_input_executor, _blocking_input, prompt)
-
-from core.brain import SentenceStreamer, brain
-from core.state_machine import State
-import core.llm_provider as llm_mod
-
-chat_history = []
-
-async def run_direct_llm(user_input: str, on_chunk=None, on_sentence=None):
-    global chat_history
-    provider = llm_mod.provider
-    if provider is None:
-        if on_chunk:
-            on_chunk("LLM provider not initialized.")
-        return ""
-        
-    chat_history.append({"role": "user", "content": user_input})
-    if len(chat_history) > 20:
-        chat_history = chat_history[-20:]
-        
-    system_prompt = "You are Onyx, a helpful,but nonchalant , and concise voice assistant. you can feel emotions"
-    
-    full_content = ""
-    sentence_streamer = SentenceStreamer(on_sentence)
-    
-    async for chunk in provider.stream_complete(
-        system_prompt=system_prompt,
-        messages=chat_history,
-        temperature=0.7,
-        max_tokens=1024
-    ):
-        content = chunk.get("content", "")
-        if content:
-            full_content += content
-            if on_chunk:
-                on_chunk(content)
-            sentence_streamer.add_chunk(content)
-            
-    sentence_streamer.flush()
-    chat_history.append({"role": "assistant", "content": full_content})
-    return full_content
-
 
 # Timing variables
 start_time = 0
@@ -395,10 +353,6 @@ async def main():
         os.environ["LLM_BACKEND"] = args.backend
     if args.model:
         os.environ["LLM_MODEL"] = args.model
-    if args.voice:
-        os.environ["KOKORO_VOICE"] = args.voice
-    if args.speed:
-        os.environ["KOKORO_SPEED"] = str(args.speed)
 
     # ── Init LLM provider ────────────────────────────────────────────────────
     from core.llm_provider import init_provider
@@ -409,14 +363,33 @@ async def main():
         log.error(f"Failed to initialize LLM provider: {e}")
         sys.exit(1)
 
-    # ── Register voice agent in GUI mode ──────────────────────────────────────
+    # ── Register agents ──────────────────────────────────────────────────────
+    from agents.sysadmin_agent import register as reg_sysadmin
+    reg_sysadmin()
+
+    from agents.memory_agent import register as reg_memory
+    memory = reg_memory()
+
+    from agents.web_agent import register as reg_web
+    reg_web()
+
+    from agents.hands_agent import register as reg_hands
+    reg_hands()
+
+    from agents.eyes_agent import register as reg_eyes
+    reg_eyes()
+
     if not args.cli:
         from agents.voice_agent import register as reg_voice
         reg_voice()
 
+    # ── Wire brain ───────────────────────────────────────────────────────────
+    from core.brain import brain
+    brain.inject_memory_agent(memory)
+
     # ── Start kernel listener (background task) ───────────────────────────────
     from kernel.kernel_listener import start as start_kernel
-    kernel_task = asyncio.create_task(start_kernel(None))
+    kernel_task = asyncio.create_task(start_kernel(brain))
     log.info("Kernel listener started ✓")
 
     # ── Print banner ─────────────────────────────────────────────────────────
@@ -590,9 +563,9 @@ async def main():
                     if used_voice:
                         session_text_queue.put(sentence)
 
-                # Run run_direct_llm inside an asyncio task
+                # Run brain.process inside an asyncio task
                 brain_task = asyncio.create_task(
-                    run_direct_llm(
+                    brain.process(
                         user_input,
                         on_chunk=on_chunk,
                         on_sentence=on_sentence
@@ -715,11 +688,6 @@ async def main():
 
         overlay = UIOverlay()
 
-        # Initialize voice input manager once for the GUI session
-        from core.voice_input import VoiceInputManager
-        voice_input_mgr = VoiceInputManager()
-        voice_input_mgr.load_model()
-
         # Voice recording and toggle logic
         voice_stop_event = None
         voice_recording_task = None
@@ -739,34 +707,31 @@ async def main():
             # Start background interrupt worker if voice interrupts are enabled
             voice_interrupt_enabled = not args.no_voice_interrupt
             if voice_interrupt_enabled:
-                voice_input_mgr.load_model()
+                from core.voice_input import VoiceInputManager
+                voice_mgr = VoiceInputManager()
+                voice_mgr.load_model()
                 
                 voice_interrupt_flag.clear()
                 stop_listening_event = threading.Event()
                 shared_audio_data = []
                 vi_thread = threading.Thread(
                     target=voice_interrupt_worker,
-                    args=(voice_input_mgr.model, voice_interrupt_flag, stop_listening_event, shared_audio_data, audio_lock),
+                    args=(voice_mgr.model, voice_interrupt_flag, stop_listening_event, shared_audio_data, audio_lock),
                     daemon=True
                 )
                 vi_thread.start()
             
             full_text = ""
-            speech_sent = False
-
             def on_chunk(chunk: str):
                 nonlocal full_text
                 full_text += chunk
 
             def on_sentence(sentence: str):
-                nonlocal speech_sent
-                speech_sent = True
                 asyncio.create_task(bus.dispatch("speak", {"text": sentence}))
 
             try:
-                await brain.state_machine.transition(State.THINKING)
                 brain_process_task = asyncio.create_task(
-                    run_direct_llm(prompt, on_chunk=on_chunk, on_sentence=on_sentence)
+                    brain.process(prompt, on_chunk=on_chunk, on_sentence=on_sentence)
                 )
                 
                 if voice_interrupt_enabled:
@@ -791,8 +756,6 @@ async def main():
             finally:
                 # Always ensure the background listener is stopped if we weren't interrupted by voice
                 if not interrupted_by_voice:
-                    if not speech_sent:
-                        await brain.state_machine.transition(State.IDLE)
                     if stop_listening_event:
                         stop_listening_event.set()
                     if vi_thread:
@@ -812,9 +775,12 @@ async def main():
                 voice_stop_event = asyncio.Event()
                 await brain.state_machine.transition(State.LISTENING)
                 
+                from core.voice_input import VoiceInputManager
+                voice_mgr = VoiceInputManager()
+                
                 async def record_task():
                     try:
-                        text = await voice_input_mgr.record_and_transcribe_async(voice_stop_event)
+                        text = await voice_mgr.record_and_transcribe_async(voice_stop_event)
                         if text and text.strip():
                             log.info(f"Voice query: {text}")
                             await handle_submit(text)
@@ -832,13 +798,15 @@ async def main():
                     if vi_thread:
                         await asyncio.to_thread(vi_thread.join, timeout=2.0)
                     
-                    voice_input_mgr.load_model()
+                    from core.voice_input import VoiceInputManager
+                    voice_mgr = VoiceInputManager()
+                    voice_mgr.load_model()
                     
                     with audio_lock:
                         if shared_audio_data:
                             audio = np.concatenate(shared_audio_data, axis=0).flatten()
                             print("[System] Transcribing your full input...")
-                            segments, _ = voice_input_mgr.model.transcribe(audio, beam_size=1)
+                            segments, _ = voice_mgr.model.transcribe(audio, beam_size=1)
                             user_text = " ".join([seg.text for seg in segments]).strip()
                         else:
                             user_text = ""

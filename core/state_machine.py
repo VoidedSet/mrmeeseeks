@@ -22,9 +22,9 @@ class State(Enum):
 TRANSITIONS = {
     State.IDLE:      [State.LISTENING, State.THINKING],
     State.LISTENING: [State.THINKING, State.IDLE],
-    State.THINKING:  [State.ACTING, State.IDLE],
-    State.ACTING:    [State.SPEAKING, State.IDLE],
-    State.SPEAKING:  [State.IDLE],
+    State.THINKING:  [State.SPEAKING, State.IDLE, State.LISTENING, State.ACTING],
+    State.ACTING:    [State.SPEAKING, State.IDLE, State.THINKING],
+    State.SPEAKING:  [State.IDLE, State.LISTENING, State.THINKING],
 }
 
 class StateMachine:

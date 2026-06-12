@@ -19,7 +19,11 @@ class VoiceInputManager:
         """Lazy load the Whisper model on CPU with int8 quantization."""
         if self.model is None:
             log.info("Loading Whisper model (tiny.en, CPU, int8)...")
-            self.model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+            try:
+                self.model = WhisperModel("tiny.en", device="cpu", compute_type="int8", local_files_only=True)
+            except Exception:
+                log.info("Local Whisper model not found. Downloading from Hugging Face...")
+                self.model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
             log.info("Whisper model loaded successfully ✓")
 
     def record_and_transcribe(self) -> str:

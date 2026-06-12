@@ -193,10 +193,12 @@ def _synthesis_worker():
                 
             log.info(f"Synthesizing speech: '{cleaned_chunk[:60]}...'")
             try:
+                voice = os.environ.get("KOKORO_VOICE", "af_sarah")
+                speed = float(os.environ.get("KOKORO_SPEED", "1.1"))
                 samples, sample_rate = _kokoro_engine.create(
                     cleaned_chunk,
-                    voice="af_sarah",
-                    speed=1.0,
+                    voice=voice,
+                    speed=speed,
                     lang="en-us"
                 )
                 
@@ -215,6 +217,9 @@ def _play_worker():
     global _active_stream, _main_loop
     import sounddevice as sd
     
+    stream = None
+    current_sample_rate = None
+    
     while True:
         try:
             item = _audio_queue.get()
@@ -228,6 +233,19 @@ def _play_worker():
                     _audio_queue.task_done()
                     continue
             
+            if stream is None or sample_rate != current_sample_rate:
+                if stream is not None:
+                    try:
+                        stream.stop()
+                        stream.close()
+                    except Exception:
+                        pass
+                log.info(f"Opening Output Stream (samplerate={sample_rate})...")
+                stream = sd.OutputStream(samplerate=sample_rate, channels=1, dtype='float32')
+                stream.start()
+                _active_stream = stream
+                current_sample_rate = sample_rate
+            
             # Reshape mono 1D array to 2D
             if samples.ndim == 1:
                 samples_2d = samples.reshape(-1, 1)
@@ -236,24 +254,43 @@ def _play_worker():
             
             log.info("Playing synthesized audio...")
             try:
-                _active_stream = sd.OutputStream(samplerate=sample_rate, channels=1, dtype='float32')
-                with _active_stream:
-                    _active_stream.write(samples_2d)
-                _active_stream = None
+                stream.write(samples_2d)
             except Exception as ex:
-                log.error(f"Error during audio playback: {ex}")
+                log.error(f"Error during audio playback write: {ex}")
+                # Reset stream on error so it reopens next time
+                try:
+                    stream.stop()
+                    stream.close()
+                except Exception:
+                    pass
+                stream = None
                 _active_stream = None
                 
             _audio_queue.task_done()
             
             # Transition to IDLE state once queues become empty
             if _text_queue.empty() and _audio_queue.empty() and _main_loop:
-                _main_loop.call_soon_threadsafe(
-                    lambda: asyncio.create_task(brain.state_machine.transition(State.IDLE))
-                )
+                if brain.state_machine.current == State.SPEAKING:
+                    _main_loop.call_soon_threadsafe(
+                        lambda: asyncio.create_task(brain.state_machine.transition(State.IDLE))
+                    )
         except Exception as e:
             log.error(f"Voice playback worker thread loop hit an error: {e}")
+            if stream is not None:
+                try:
+                    stream.stop()
+                    stream.close()
+                except Exception:
+                    pass
+                stream = None
             _active_stream = None
+            
+    if stream is not None:
+        try:
+            stream.stop()
+            stream.close()
+        except Exception:
+            pass
  
 async def handle_speak(args: dict) -> dict:
     text = args.get("text", "").strip()
