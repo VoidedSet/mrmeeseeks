@@ -3,23 +3,30 @@
 # ── Core ──────────────────────────────────────────────────────────────────────
 httpx>=0.28.0          # async HTTP — Groq + Ollama calls
 python-dotenv>=1.0.0   # .env loading
+requests>=2.31.0       # sync HTTP — Supermemory API calls
 
 # ── Schema validation ─────────────────────────────────────────────────────────
-pydantic>=2.0.0        # tool schema validation (future — currently pure Python)
+pydantic>=2.0.0        # tool schema validation
 
-# ── Phase 2 — Eyes + Hands (install when building those agents) ───────────────
-pyautogui             # mouse/keyboard control
-# pyatspi             # AT-SPI2 accessibility DOM (better to install via apt: sudo apt install python3-pyatspi)
+# ── Document Parsing ──────────────────────────────────────────────────────────
+pypdf>=4.0.0           # PDF text + image extraction
+Pillow>=10.0.0         # Image loading for OCR
 
-# ── Phase 3 — Voice (install when building buddy_agent) ──────────────────────
+# ── OCR (image → text → Supermemory) ─────────────────────────────────────────
+pytesseract>=0.3.10    # Python wrapper for tesseract-ocr
+# Note: also requires system package: sudo apt install tesseract-ocr
+
+# ── Kernel Listeners ──────────────────────────────────────────────────────────
+evdev>=1.6.0           # raw input events for idle detection
+
+# ── Phase 2 — Eyes + Hands ───────────────────────────────────────────────────
+pyautogui              # mouse/keyboard control
+
+# ── Phase 3 — Voice ──────────────────────────────────────────────────────────
 # faster-whisper        # local STT
 # kokoro-onnx           # local TTS
-# pvporcupine           # wake word detection
 
-# ── Phase 5 — Kernel Listeners ────────────────────────────────────────────────
-# evdev                 # raw input events (/dev/input/event*)
-
-# ── GUI Overlay (Phase 4) ─────────────────────────────────────────────────────
+# ── GUI Overlay ───────────────────────────────────────────────────────────────
 PyQt6>=6.4.0
 qasync>=0.23.0
 pynput>=1.7.6
