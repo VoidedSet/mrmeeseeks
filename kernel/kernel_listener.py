@@ -185,10 +185,18 @@ async def start(brain_ref=None):
     except Exception as e:
         log.warning(f"Kernel warm-up error: {e}")
 
-    # Launch all polling loops
-    await asyncio.gather(
-        _poll_active_window(brain_ref),
-        _poll_open_windows(brain_ref),
-        _poll_battery(brain_ref),
-        _poll_app_bridge(brain_ref),
-    )
+    # Launch all polling loops and Sentinel Listener
+    from kernel.sentinel_listener import SentinelListener
+    sentinel = SentinelListener(brain_ref)
+    await sentinel.start()
+
+    try:
+        await asyncio.gather(
+            _poll_active_window(brain_ref),
+            _poll_open_windows(brain_ref),
+            _poll_battery(brain_ref),
+            _poll_app_bridge(brain_ref),
+        )
+    finally:
+        log.info("Stopping Sentinel listener subprocess...")
+        await sentinel.stop()
