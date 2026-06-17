@@ -123,7 +123,7 @@ TOOL_SCHEMAS = {
 
     # ── Done ──
     "done": {
-        "description": "Signal end of ReAct loop. Always emit this last with your spoken response.",
+        "description": "Emit this last with your spoken response at the end of ReACT Loop.",
         "args": {"speech": "string — what to say to the user"}
     },
 }
@@ -256,10 +256,29 @@ def is_destructive(cmd: str) -> bool:
     first_word = cmd.strip().split()[0] if cmd.strip() else ""
     return first_word in DESTRUCTIVE_CMDS or any(d in cmd for d in {"> /", "sudo rm", "sudo dd"})
 
+
+EXCLUDED_TOOLS = {
+    "get_ui_elements",
+    "list_at_spi_apps",
+    "read_element_text",
+    "find_element_by_label",
+    "click_at",
+    "double_click_at",
+    "type_text",
+    "key_press",
+    "scroll",
+    "gui_research",
+    "list_memory_keys",
+    "read_notifications"
+}
+
+VISIBLE_TOOL_SCHEMAS = {k: v for k, v in TOOL_SCHEMAS.items() if k not in EXCLUDED_TOOLS}
+
+
 def get_openai_tools() -> list[dict]:
-    """Convert TOOL_SCHEMAS to OpenAI/Ollama native tools array format."""
+    """Convert VISIBLE_TOOL_SCHEMAS to OpenAI/Ollama native tools array format."""
     tools = []
-    for name, schema in TOOL_SCHEMAS.items():
+    for name, schema in VISIBLE_TOOL_SCHEMAS.items():
         required = REQUIRED_ARGS.get(name, [])
         properties = {}
         for arg_name, arg_desc in schema.get("args", {}).items():

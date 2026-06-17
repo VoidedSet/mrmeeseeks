@@ -103,17 +103,23 @@ int main(int argc, char* argv[]) {
     if (argc > 1) {
         new_vol = argv[1];
     }
-    // If New Volume is mounted, add its directories (excluding Projects)
+    // If New Volume is mounted, add specific subdirectories
     std::string vol_path(new_vol);
-    if (access((vol_path + "/Sem 3").c_str(), F_OK) == 0) {
-        watch_paths.push_back(vol_path + "/Sem 3");
-        watch_paths.push_back(vol_path + "/Sem 4");
-        watch_paths.push_back(vol_path + "/Sem 5");
-        watch_paths.push_back(vol_path + "/Sem 6");
-        watch_paths.push_back(vol_path + "/Pictures");
-        watch_paths.push_back(vol_path + "/Journal");
-        watch_paths.push_back(vol_path + "/Resumes");
+    if (access(vol_path.c_str(), F_OK) == 0) {
         std::cout << "[Sentinel] Found mounted New Volume. Adding watch paths." << std::endl;
+        std::vector<std::string> sub_paths = {
+            vol_path + "/Sem 6",
+            vol_path + "/Journal",
+            vol_path + "/Resumes",
+            vol_path + "/Pictures/Adobe Scan Exports"
+        };
+        for (const auto& path : sub_paths) {
+            if (access(path.c_str(), F_OK) == 0) {
+                watch_paths.push_back(path);
+            } else {
+                std::cout << "[Sentinel] Watch path not found: " << path << ". Skipping." << std::endl;
+            }
+        }
     } else {
         std::cout << "[Sentinel] New Volume not found at " << vol_path << ". Skipping." << std::endl;
     }

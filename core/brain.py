@@ -19,9 +19,7 @@ import logging
 from datetime import datetime
 from typing import Optional, Callable
 
-import httpx
-
-from core.schema_registry import TOOL_SCHEMAS, validate_tool_call, get_openai_tools
+from core.schema_registry import TOOL_SCHEMAS, VISIBLE_TOOL_SCHEMAS, validate_tool_call, get_openai_tools
 from core.ipc_bus import bus
 from core.state_machine import StateMachine, State
 import core.llm_provider as llm_mod
@@ -93,20 +91,84 @@ def format_memory_context(memory_dict: dict) -> str:
     return "\n".join(parts) if parts else "(empty)"
 
 
+def process_time_words(text: str) -> str:
+    """Replaces temporal words like 'yesterday' or 'today' with absolute date strings before search."""
+    if not text:
+        return text
+    from datetime import date, timedelta
+    today = date.today()
+    
+    # Yesterday
+    if "yesterday" in text.lower():
+        val = today - timedelta(days=1)
+        text = re.sub(r"\byesterday\b", f"on {val.strftime('%A, %Y-%m-%d')}", text, flags=re.IGNORECASE)
+    
+    # Today
+    if "today" in text.lower():
+        text = re.sub(r"\btoday\b", f"on {today.strftime('%A, %Y-%m-%d')}", text, flags=re.IGNORECASE)
+        
+    return text
+
+
+def should_query_supermemory(prompt: str) -> bool:
+    """Deterministic check to skip Supermemory queries for greetings and simple OS/system actions."""
+    if not prompt:
+        return False
+    lowered = prompt.lower().strip().strip("?!.")
+    
+    # Greetings/simple chat
+    greetings = {
+        "hi", "hello", "hey", "yo", "good morning", "good afternoon", "good evening",
+        "who are you", "what is your name", "tell me about yourself", "bye", "goodbye", "exit", "quit"
+    }
+    if lowered in greetings:
+        return False
+        
+    # Simple OS actions/status checks that don't need semantic memory
+    os_keywords = {
+        "battery", "window", "screenshot", "screen shot", "click", "type", 
+        "press", "scroll", "open", "launch", "restart", "shutdown", "mute", "volume"
+    }
+    
+    # If it contains any OS keywords and is relatively short, skip Supermemory
+    words = set(lowered.split())
+    if words.intersection(os_keywords) and len(words) <= 6:
+        return False
+        
+    return True
+
+
+def format_user_message_with_context(user_input: str, context: dict) -> str:
+    """Formats the dynamic session context to be sent inside the user message (caching-friendly)."""
+    cwd = context.get("cwd", "unknown")
+    logs_dir = context.get("logs_dir", "unknown")
+    memory_str = format_memory_context(context.get("memory", {}))
+    
+    parts = []
+    parts.append("=== DYNAMIC CONTEXT ===")
+    parts.append(f"working_dir : {cwd}")
+    parts.append(f"logs_dir    : {logs_dir}")
+    if memory_str and memory_str != "(empty)":
+        parts.append(f"=== INJECTED MEMORY ===\n{memory_str}")
+    
+    parts.append(f"\nUser Query: {user_input}")
+    return "\n".join(parts)
+
+
 # ── Unified System Prompt (first call — lightweight) ─────────────────────────
-def build_unified_prompt(context: dict) -> str:
+def build_unified_prompt(context: dict = None) -> str:
     """
     Lightweight first-call prompt. Includes tool NAMES only (no full schemas).
     Full schemas injected only when entering ReAct loop.
     The model decides: plain text reply = conversational, JSON tool call = agentic.
     """
-    available    = bus.registered_tools()
-    memory_str   = format_memory_context(context.get("memory", {}))
-    open_windows = context.get("open_windows", [])
-    windows_str  = "\n".join(f"  - {w}" for w in open_windows) if open_windows else "  (none detected)"
+    from core.schema_registry import EXCLUDED_TOOLS
+    available = [t for t in bus.registered_tools() if t not in EXCLUDED_TOOLS]
+    current_date = datetime.now().strftime("%A, %Y-%m-%d")
 
     return (
         "You are Mr Meeseeks — a local AI OS companion running on Ubuntu.\n"
+        f"Current Date: {current_date}\n"
         "You are helpful, direct, and have personality.\n"
         "\n"
         "=== HOW TO RESPOND ===\n"
@@ -119,33 +181,14 @@ def build_unified_prompt(context: dict) -> str:
         "2. JSON TOOL CALL — for tasks needing system access, commands, or memory.\n"
         "   Output ONLY this JSON — NO text before or after it:\n"
         '   {"thought": "...", "tool": "tool_name", "args": {...}}\n'
-        "   Examples: open netflix, check battery, take a screenshot, click a button\n"
+        "   Examples: open netflix, check battery, take a screenshot\n"
         "\n"
         "CRITICAL for mode 2: output ONLY the JSON. Zero intro text. Zero explanation.\n"
-        "\n"
-        "=== WHAT'S ALREADY KNOWN (NO TOOL CALL NEEDED) ===\n"
-        "The following is live OS state — use it directly without calling any tool:\n"
-        f"  active_window : {context.get('active_window', 'unknown')}\n"
-        f"  battery       : {context.get('battery', {})}\n"
-        f"  time          : {context.get('time', '')}\n"
-        f"  open_windows  :\n{windows_str}\n"
-        "\n"
-        "If the user asks 'what apps are open?', 'list open windows', 'what is my battery?', etc.\n"
-        "→ Answer directly from the above. Do NOT call list_open_windows or check_battery.\n"
         "\n"
         "=== TOOL RULES ===\n"
         "run_bg_cmd           — ALL read operations: head, cat, grep, ls, find, ps, df, wmctrl\n"
         '                       Read file: {"tool": "run_bg_cmd", "args": {"cmd": "head -n 20 /path/to/file"}}\n'
         "open_visible_terminal — ONLY for commands that MODIFY or LAUNCH: install, xdg-open, scripts\n"
-        "get_ui_elements      — see screen elements. PROCESS names: VS Code='code', Firefox='firefox'.\n"
-        "                       CRITICAL: app= takes the PROCESS name, NOT the window title.\n"
-        "                       VS Code  → app='code'  |  Firefox → app='firefox'  |  Terminal → app='gnome-terminal-server'\n"
-        "                       If unsure: call list_at_spi_apps first to see all registered process names.\n"
-        '                       VS Code: {"tool": "get_ui_elements", "args": {"app": "code"}}\n'
-        '                       Firefox top bar: {"tool": "get_ui_elements", "args": {"app": "firefox", "region": {"x1":0,"y1":0,"x2":1920,"y2":80}}}\n'
-        "\n"
-        "list_at_spi_apps     — USE THIS when unsure of process name for get_ui_elements.\n"
-        '                       {"tool": "list_at_spi_apps", "args": {}}\n'
         "\n"
         f"=== AVAILABLE TOOLS ===\n{available}\n"
         "\n"
@@ -153,32 +196,26 @@ def build_unified_prompt(context: dict) -> str:
         "  - Don't know the key? Call list_memory_keys first to see what's stored.\n"
         '  - Recall: {"tool": "fetch_memory", "args": {"keys": ["name"]}}\n'
         '  - Save:   {"tool": "update_memory", "args": {"key": "name", "data": "kshayik"}}\n'
-        "\n"
-        "=== CURRENT CONTEXT ===\n"
-        f"working_dir   : {context.get('cwd', 'unknown')}\n"
-        f"logs_dir      : {context.get('logs_dir', 'unknown')}\n"
-        "\n"
-        "=== INJECTED MEMORY ===\n"
-        + memory_str
     )
 
 
 # ── Agentic System Prompt (ReAct loop — full schemas) ────────────────────────
-def build_system_prompt(context: dict) -> str:
-    available   = bus.registered_tools()
-    schemas_str = json.dumps(TOOL_SCHEMAS, indent=2)
-    memory_str  = format_memory_context(context.get("memory", {}))
-    events_str  = json.dumps(context.get("recent_events", [])[-5:], indent=2)
+def build_system_prompt(context: dict = None) -> str:
+    from core.schema_registry import EXCLUDED_TOOLS, VISIBLE_TOOL_SCHEMAS
+    available = [t for t in bus.registered_tools() if t not in EXCLUDED_TOOLS]
+    schemas_str = json.dumps(VISIBLE_TOOL_SCHEMAS, indent=2)
+    current_date = datetime.now().strftime("%A, %Y-%m-%d")
 
     return (
         "You are Mr Meeseeks — a local AI OS companion running on Ubuntu.\n"
+        f"Current Date: {current_date}\n"
         "You assist with coding, system tasks, and research.\n"
         "\n"
         "=== STRICT OUTPUT RULES ===\n"
         "1. Output ONLY valid JSON. Zero free text. Zero markdown.\n"
         "2. One JSON object per response.\n"
         "3. When done, emit the 'done' tool with your spoken response.\n"
-        "4. NEVER guess coordinates — call get_ui_elements first.\n"
+        "4. Never guess coordinates.\n"
         "5. Never emit destructive commands in run_bg_cmd.\n"
         "6. If a tool returns an error, try a DIFFERENT approach.\n"
         "7. If you cannot complete a task, emit done and explain honestly.\n"
@@ -193,19 +230,10 @@ def build_system_prompt(context: dict) -> str:
         "  USE ONLY when the user explicitly asks to open a terminal or launch a GUI app.\n"
         '  Open app: {"tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://..."}}\n'
         "  DO NOT use for read-only commands or web searches.\n"
-        "  DO NOT invent commands that don't exist (e.g. xdg-query does not exist).\n"
         "\n"
         "simple_scrape:\n"
         "  USE THIS silently in the background whenever you need to search the web for latest knowledge or news.\n"
         '  {"tool": "simple_scrape", "args": {"query": "latest nvidia news"}}\n'
-        "\n"
-        "list_open_windows:\n"
-        "  USE THIS (not get_active_window) when user asks for ALL windows.\n"
-        '  {"tool": "list_open_windows", "args": {}}\n'
-        "\n"
-        "get_ui_elements:\n"
-        "  Returns AT-SPI accessibility tree. Large output — summarize key items in done speech.\n"
-        "  Only return element names/roles that are relevant to user's question.\n"
         "\n"
         "=== WHEN NOT TO USE TOOLS ===\n"
         "Answer from context/history WITHOUT tools for:\n"
@@ -230,17 +258,6 @@ def build_system_prompt(context: dict) -> str:
         "\n"
         f"=== FULL TOOL SCHEMAS ===\n{schemas_str}\n"
         "\n"
-        "=== CURRENT CONTEXT ===\n"
-        f"active_window : {context.get('active_window', 'unknown')}\n"
-        f"battery       : {context.get('battery', 'unknown')}\n"
-        f"time          : {context.get('time', datetime.now().strftime('%H:%M'))}\n"
-        f"working_dir   : {context.get('cwd', 'unknown')}\n"
-        f"logs_dir      : {context.get('logs_dir', 'unknown')}\n"
-        f"recent_events : {events_str}\n"
-        "\n"
-        "=== INJECTED MEMORY ===\n"
-        + memory_str
-        + "\n\n"
         "=== EXAMPLES ===\n"
         'User: "list all open windows"\n'
         '-> {"thought": "Use list_open_windows for all windows.", "tool": "list_open_windows", "args": {}}\n'
@@ -249,12 +266,6 @@ def build_system_prompt(context: dict) -> str:
         'User: "read first 10 lines of /home/user/file.txt"\n'
         '-> {"thought": "head is read-only, use run_bg_cmd.", "tool": "run_bg_cmd", "args": {"cmd": "head -n 10 /home/user/file.txt"}}\n'
         '   (gets output) -> {"thought": "Got file contents.", "tool": "done", "args": {"speech": "The file starts with: ..."}}\n'
-        "\n"
-        'User: "click on File menu in VS Code"\n'
-        '-> {"thought": "Need to find coords of File menu first.", "tool": "get_ui_elements", "args": {"app": "code"}}\n'
-        '   (gets result with File at x=50, y=30)\n'
-        '-> {"thought": "Clicking at 50, 30.", "tool": "click_at", "args": {"x": 50, "y": 30}}\n'
-        '   (gets result) -> {"thought": "Clicked successfully.", "tool": "done", "args": {"speech": "I clicked the File menu."}}\n'
         "\n"
         'User: "open youtube"\n'
         '-> {"thought": "User wants to open a GUI app, use open_visible_terminal.", "tool": "open_visible_terminal", "args": {"cmd": "xdg-open https://youtube.com"}}\n'
@@ -267,7 +278,6 @@ def build_system_prompt(context: dict) -> str:
         '-> {"thought": "Not sure of key, list memory keys first.", "tool": "list_memory_keys", "args": {}}\n'
         '   (sees {"keys": ["city_name", "name"]})\n'
         '-> {"thought": "Key is city_name.", "tool": "fetch_memory", "args": {"keys": ["city_name"]}}\n'
-        '   (gets result) -> {"thought": "Got city.", "tool": "done", "args": {"speech": "Your city is Mumbai."}}\n'
     )
 
 
@@ -439,9 +449,10 @@ async def unified_stream_call(
     if provider is None:
         return "LLM provider not initialized.", None
 
-    system_prompt = build_unified_prompt(context)
+    system_prompt = build_unified_prompt()
     messages = history.messages.copy()
-    messages.append({"role": "user", "content": user_input})
+    user_content = format_user_message_with_context(user_input, context)
+    messages.append({"role": "user", "content": user_content})
 
     log.info(f"Unified stream call for: {user_input[:60]}")
 
@@ -562,10 +573,11 @@ async def unified_first_call(
     if provider is None:
         return "LLM provider not initialized.", None
 
-    system_prompt = build_unified_prompt(context)
+    system_prompt = build_unified_prompt()
 
     messages = history.messages.copy()
-    messages.append({"role": "user", "content": user_input})
+    user_content = format_user_message_with_context(user_input, context)
+    messages.append({"role": "user", "content": user_content})
 
     log.info(f"Unified call for: {user_input[:60]}")
 
@@ -654,9 +666,10 @@ async def react_loop(
     if provider is None:
         return "LLM provider not initialized. Call init_provider() first.", [], False
 
-    history.add("user", user_input)
+    user_content = format_user_message_with_context(user_input, context)
+    history.add("user", user_content)
 
-    system_prompt  = build_system_prompt(context)
+    system_prompt  = build_system_prompt()
     steps          = 0
     observations   = []
     parse_failures = 0
@@ -872,78 +885,73 @@ async def build_context(memory_agent, kernel_events: list, user_prompt: str = ""
             pass
 
     memory = {}
-    if user_prompt:
-        lowered = user_prompt.lower().strip().strip("?!.")
-        is_greeting = lowered in {
-            "hi", "hello", "hey", "yo", "good morning", "good afternoon", "good evening",
-            "who are you", "what is your name", "tell me about yourself", "bye", "goodbye", "exit", "quit"
-        }
-        if not is_greeting:
-            try:
-                from core.supermemory_client import SupermemoryClient
-                sm = SupermemoryClient()
+    if user_prompt and should_query_supermemory(user_prompt):
+        try:
+            processed_prompt = process_time_words(user_prompt)
+            from core.supermemory_client import SupermemoryClient
+            sm = SupermemoryClient()
 
-                async def fetch_docs():
-                    try:
-                        return await asyncio.to_thread(
-                            sm.search_all,
-                            query=user_prompt,
-                            container_tags=["personal_notes", "projects"],
-                            limit=2
-                        )
-                    except Exception as ex:
-                        log.warning(f"Error fetching docs from SM: {ex}")
-                        return []
+            async def fetch_docs():
+                try:
+                    return await asyncio.to_thread(
+                        sm.search_all,
+                        query=processed_prompt,
+                        container_tags=["personal_notes", "projects"],
+                        limit=2
+                    )
+                except Exception as ex:
+                    log.warning(f"Error fetching docs from SM: {ex}")
+                    return []
 
-                async def fetch_mems():
-                    try:
-                        return await asyncio.to_thread(
-                            sm.search_memories,
-                            query=user_prompt,
-                            container_tag="personal_notes",
-                            limit=2
-                        )
-                    except Exception as ex:
-                        log.warning(f"Error fetching memories from SM: {ex}")
-                        return []
+            async def fetch_mems():
+                try:
+                    return await asyncio.to_thread(
+                        sm.search_memories,
+                        query=processed_prompt,
+                        container_tag="chat_memory",
+                        limit=2
+                    )
+                except Exception as ex:
+                    log.warning(f"Error fetching memories from SM: {ex}")
+                    return []
 
-                async def fetch_prof():
-                    try:
-                        return await asyncio.to_thread(
-                            sm.get_profile,
-                            container_tag="personal_notes",
-                            query=user_prompt
-                        )
-                    except Exception as ex:
-                        log.warning(f"Error fetching profile from SM: {ex}")
-                        return {}
+            async def fetch_prof():
+                try:
+                    return await asyncio.to_thread(
+                        sm.get_profile,
+                        container_tag="chat_memory",
+                        query=processed_prompt
+                    )
+                except Exception as ex:
+                    log.warning(f"Error fetching profile from SM: {ex}")
+                    return {}
 
-                doc_chunks, memory_results, profile_data = await asyncio.gather(
-                    fetch_docs(),
-                    fetch_mems(),
-                    fetch_prof()
-                )
+            doc_chunks, memory_results, profile_data = await asyncio.gather(
+                fetch_docs(),
+                fetch_mems(),
+                fetch_prof()
+            )
 
-                documents = []
-                for item in doc_chunks:
-                    content = item.get("content", "")
-                    if content:
-                        content_clean = content.strip()
-                        if len(content_clean) > 300:
-                            content_clean = content_clean[:300] + "... [truncated]"
-                        documents.append(content_clean)
+            documents = []
+            for item in doc_chunks:
+                content = item.get("content", "")
+                if content:
+                    content_clean = content.strip()
+                    if len(content_clean) > 300:
+                        content_clean = content_clean[:300] + "... [truncated]"
+                    documents.append(content_clean)
 
-                memories = [m.get("content", "").strip() for m in memory_results if m.get("content")]
-                profile_text = profile_data.get("profile", "") or profile_data.get("summary", "") or ""
+            memories = [m.get("content", "").strip() for m in memory_results if m.get("content")]
+            profile_text = profile_data.get("profile", "") or profile_data.get("summary", "") or ""
 
-                if documents or memories or profile_text:
-                    memory = {
-                        "relevant_documents": documents,
-                        "relevant_memories": memories,
-                        "user_profile": profile_text
-                    }
-            except Exception as e:
-                log.warning(f"Failed to fetch semantic context from Supermemory: {e}")
+            if documents or memories or profile_text:
+                memory = {
+                    "relevant_documents": documents,
+                    "relevant_memories": memories,
+                    "user_profile": profile_text
+                }
+        except Exception as e:
+            log.warning(f"Failed to fetch semantic context from Supermemory: {e}")
 
     cwd = os.getcwd()
 

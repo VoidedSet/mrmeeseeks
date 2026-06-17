@@ -123,6 +123,47 @@ first_token_time = None
 first_audio_played_time = None
 sentence_count = 0
 
+def start_global_quit_listener():
+    """Starts a global keyboard listener to gracefully quit Meeseeks on Ctrl+Alt+Escape or Ctrl+Alt+Q."""
+    try:
+        from pynput import keyboard
+        
+        COMBINATIONS = [
+            {keyboard.Key.ctrl, keyboard.Key.alt, keyboard.Key.esc},
+            {keyboard.Key.ctrl, keyboard.Key.alt, keyboard.KeyCode(char='q')},
+            {keyboard.Key.ctrl, keyboard.Key.alt, keyboard.KeyCode(char='Q')}
+        ]
+        current_keys = set()
+
+        def on_press(key):
+            current_keys.add(key)
+            for combo in COMBINATIONS:
+                if all(k in current_keys for k in combo):
+                    print("\n[Meeseeks] Global exit hotkey detected! Exiting gracefully...")
+                    from PyQt6.QtWidgets import QApplication
+                    app = QApplication.instance()
+                    if app:
+                        app.quit()
+                    else:
+                        import os
+                        import signal
+                        handle_signal_quit(signal.SIGINT, None)
+                    break
+
+        def on_release(key):
+            try:
+                current_keys.remove(key)
+            except KeyError:
+                pass
+
+        listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+        listener.daemon = True
+        listener.start()
+        print("[System] Global quit hotkey listener active (Ctrl+Alt+Esc or Ctrl+Alt+Q) ✓")
+    except Exception as e:
+        print(f"[Warning] Failed to start global keyboard listener: {e}")
+
+
 def preload_cuda_libs():
     """
     Programmatically preload CUDA and cuDNN libraries from venv or system
@@ -398,6 +439,9 @@ async def main():
         await asyncio.shield(service_manager.stop_services())
 
 async def _main_impl():
+    # Start the global quit hotkey listener (Ctrl+Alt+Esc or Ctrl+Alt+Q)
+    start_global_quit_listener()
+
     # Propagate CLI arguments directly to environment variables before initializing the provider
     if args.backend:
         os.environ["LLM_BACKEND"] = args.backend
@@ -926,13 +970,40 @@ async def _main_impl():
         log.info("Shutdown completed.")
 
 
+def handle_signal_quit(sig, frame):
+    print(f"\n[Meeseeks] Signal received ({sig}). Shutting down gracefully...", flush=True)
+    try:
+        from core.service_manager import service_manager
+        service_manager.stop_services_sync()
+    except Exception:
+        pass
+    
+    import subprocess
+    for proc_name in ["sentinel-daemon", "supermemory-server", "meeseeks_service.py"]:
+        try:
+            subprocess.run(["pkill", "-9", "-f", proc_name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+            
+    print("[Meeseeks] Shutdown completed. Exiting.", flush=True)
+    import sys
+    sys.stdout.flush()
+    sys.stderr.flush()
+    import os
+    os._exit(0)
+
+
 if __name__ == "__main__":
+    import signal
+    signal.signal(signal.SIGINT, handle_signal_quit)
+    signal.signal(signal.SIGTERM, handle_signal_quit)
+
     is_cli = "--cli" in sys.argv
     if is_cli:
         try:
             asyncio.run(main())
         except KeyboardInterrupt:
-            print("\n[Meeseeks] Interrupted.")
+            handle_signal_quit(signal.SIGINT, None)
     else:
         from PyQt6.QtWidgets import QApplication
         import qasync
@@ -947,4 +1018,4 @@ if __name__ == "__main__":
         try:
             loop.run_until_complete(main())
         except KeyboardInterrupt:
-            print("\n[Meeseeks] Interrupted.")
+            handle_signal_quit(signal.SIGINT, None)

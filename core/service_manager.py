@@ -50,10 +50,13 @@ class ServiceManager:
         else:
             log.info(f"Starting Supermemory server using: {self.supermemory_cmd}")
             try:
+                env = os.environ.copy()
+                env["SUPERMEMORY_EMBEDDING_RAM_LIMIT"] = "100MB"
                 self.supermemory_proc = await asyncio.create_subprocess_exec(
                     self.supermemory_cmd,
                     stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    stderr=asyncio.subprocess.PIPE,
+                    env=env
                 )
                 # Read stdout in the background to prevent buffer blockages
                 asyncio.create_task(self._log_stream(self.supermemory_proc.stdout, "Supermemory"))
@@ -133,5 +136,25 @@ class ServiceManager:
             self.supermemory_proc = None
             
         log.info("Background services stopped ✓")
+
+    def stop_services_sync(self):
+        """Forcefully and synchronously terminates background services (safe for signal handlers)."""
+        log.info("Stopping background services (sync)...")
+        
+        # Terminate Unified Python backend
+        if self.backend_proc:
+            try:
+                self.backend_proc.kill()
+            except Exception:
+                pass
+            self.backend_proc = None
+
+        # Terminate Supermemory Server
+        if self.supermemory_proc:
+            try:
+                self.supermemory_proc.kill()
+            except Exception:
+                pass
+            self.supermemory_proc = None
 
 service_manager = ServiceManager()

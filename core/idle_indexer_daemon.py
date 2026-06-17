@@ -97,7 +97,7 @@ class IdleIndexerDaemon:
             new_vol_mounted = False
             try:
                 if os.path.exists(new_vol):
-                    if os.path.ismount(new_vol) or os.path.exists(os.path.join(new_vol, "Sem 3")):
+                    if os.path.ismount(new_vol) or os.path.exists(os.path.join(new_vol, "Sem 6")):
                         new_vol_mounted = True
             except Exception:
                 pass
@@ -122,14 +122,14 @@ class IdleIndexerDaemon:
         new_vol_mounted = False
         try:
             if os.path.exists(new_vol):
-                if os.path.ismount(new_vol) or os.path.exists(os.path.join(new_vol, "Sem 3")):
+                if os.path.ismount(new_vol) or os.path.exists(os.path.join(new_vol, "Sem 6")):
                     new_vol_mounted = True
         except Exception as e:
             print(f"[Indexer] Error checking mount status for {new_vol}: {e}")
 
         vol_paths = []
         if new_vol_mounted:
-            vol_subdirs = ["Sem 3", "Sem 4", "Sem 5", "Sem 6", "Pictures", "Journal", "Resumes"]
+            vol_subdirs = ["Sem 6", "Journal", "Resumes", "Pictures/Adobe Scan Exports"]
             for subdir in vol_subdirs:
                 vol_paths.append(os.path.join(new_vol, subdir))
         else:

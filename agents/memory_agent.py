@@ -140,7 +140,7 @@ class MemoryAgent:
                             return self.sm_client.ingest_conversation(
                                 conversation_id=self.session_id,
                                 messages=messages,
-                                container_tags=["personal_notes"]
+                                container_tags=["chat_memory"]
                             )
                         # Run sync requests inside a thread pool
                         asyncio.create_task(asyncio.to_thread(run_ingest))
@@ -150,7 +150,7 @@ class MemoryAgent:
                 def run_add_mem():
                     return self.sm_client.add_memories(
                         memories=[fact_str],
-                        container_tag="personal_notes"
+                        container_tag="chat_memory"
                     )
                 asyncio.create_task(asyncio.to_thread(run_add_mem))
         except Exception as e:
@@ -195,7 +195,7 @@ class MemoryAgent:
             # 2. Supermemory Graph DB lookup
             try:
                 def query_sm():
-                    return self.sm_client.search_memories(query=requested_key, container_tag="personal_notes", limit=3)
+                    return self.sm_client.search_memories(query=requested_key, container_tag="chat_memory", limit=3)
                 
                 sm_results = await asyncio.to_thread(query_sm)
                 facts = [m.get("content") for m in sm_results if m.get("content")]

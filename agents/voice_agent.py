@@ -233,6 +233,19 @@ def _play_worker():
                     _audio_queue.task_done()
                     continue
             
+            if stream is not None and not stream.active:
+                log.info("Stream was stopped or aborted. Restarting it...")
+                try:
+                    stream.start()
+                except Exception as start_ex:
+                    log.warning(f"Failed to restart stopped stream: {start_ex}. Recreating...")
+                    try:
+                        stream.close()
+                    except Exception:
+                        pass
+                    stream = None
+                    _active_stream = None
+
             if stream is None or sample_rate != current_sample_rate:
                 if stream is not None:
                     try:

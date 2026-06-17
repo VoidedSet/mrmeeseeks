@@ -228,11 +228,11 @@ class MeeseeksAPIHandler(BaseHTTPRequestHandler):
         documents = [item.get("content", "") for item in doc_chunks if item.get("content")]
 
         # Fetch relevant memories (extracted facts from conversations)
-        memory_results = sm.search_memories(query=query, container_tag="personal_notes", limit=4)
+        memory_results = sm.search_memories(query=query, container_tag="chat_memory", limit=4)
         memories = [m.get("content", "") for m in memory_results if m.get("content")]
 
         # User profile (cached — light call)
-        profile_data = sm.get_profile(container_tag="personal_notes", query=query)
+        profile_data = sm.get_profile(container_tag="chat_memory", query=query)
         profile_text = profile_data.get("profile", "") or profile_data.get("summary", "")
 
         return {
@@ -250,14 +250,14 @@ class MeeseeksAPIHandler(BaseHTTPRequestHandler):
         Accepts either:
           { "conversationId": "...", "messages": [...], "tags": [...] }
         or:
-          { "memories": ["fact 1", ...], "tag": "personal_notes" }
+          { "memories": ["fact 1", ...], "tag": "chat_memory" }
         """
         sm = SupermemoryClient()
 
         if "conversationId" in payload:
             conv_id = payload.get("conversationId")
             messages = payload.get("messages", [])
-            tags = payload.get("tags", ["personal_notes"])
+            tags = payload.get("tags", ["chat_memory"])
             if not conv_id or not messages:
                 self._send_error(400, "Missing 'conversationId' or 'messages'.")
                 return
@@ -266,7 +266,7 @@ class MeeseeksAPIHandler(BaseHTTPRequestHandler):
 
         elif "memories" in payload:
             memories = payload.get("memories", [])
-            tag = payload.get("tag", "personal_notes")
+            tag = payload.get("tag", "chat_memory")
             is_static = payload.get("isStatic", False)
             result = sm.add_memories(memories=memories, container_tag=tag, is_static=is_static)
             self._send_json(result or {"status": "error"})
