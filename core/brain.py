@@ -53,17 +53,37 @@ def format_memory_context(memory_dict: dict) -> str:
         return "(empty)"
     
     parts = []
-    profile = memory_dict.get("user_profile", "").strip()
+    profile = memory_dict.get("user_profile", "")
+    if isinstance(profile, dict):
+        items = []
+        for k, v in profile.items():
+            if isinstance(v, list):
+                items.extend([str(item).strip() for item in v if item])
+            elif v:
+                items.append(str(v).strip())
+        profile = "\n  ".join(items)
+    
+    profile = str(profile).strip()
     if profile:
         parts.append(f"User Profile:\n  {profile}")
         
-    memories = [m.strip() for m in memory_dict.get("relevant_memories", []) if m.strip()]
+    memories_raw = memory_dict.get("relevant_memories", [])
+    if isinstance(memories_raw, list):
+        memories = [str(m).strip() for m in memories_raw if str(m).strip()]
+    else:
+        memories = [str(memories_raw).strip()] if str(memories_raw).strip() else []
+        
     if memories:
         parts.append("Relevant Facts/Memories:")
         for m in memories:
             parts.append(f"  - {m}")
             
-    docs = [d.strip() for d in memory_dict.get("relevant_documents", []) if d.strip()]
+    docs_raw = memory_dict.get("relevant_documents", [])
+    if isinstance(docs_raw, list):
+        docs = [str(d).strip() for d in docs_raw if str(d).strip()]
+    else:
+        docs = [str(docs_raw).strip()] if str(docs_raw).strip() else []
+        
     if docs:
         parts.append("Relevant Document Snippets:")
         for d in docs:
