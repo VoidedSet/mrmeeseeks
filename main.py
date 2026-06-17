@@ -24,7 +24,7 @@ except ImportError:
 parser = argparse.ArgumentParser(description="Mr Meeseeks — AI OS Companion")
 parser.add_argument("--debug", action="store_true", help="Verbose logging")
 parser.add_argument("--cli", action="store_true", help="Force command-line REPL mode")
-parser.add_argument("--voice", default="jf_alpha", help="Kokoro voice (default: jf_alpha)")
+parser.add_argument("--voice", default="am_onyx", help="Kokoro voice (default: am_onyx)")
 parser.add_argument("--speed", type=float, default=1.1, help="Speech speed multiplier (default: 1.1)")
 parser.add_argument("--backend", choices=["groq", "ollama"], default=None,
                     help="LLM backend choice: groq or ollama")
@@ -390,6 +390,14 @@ def check_stdin_interrupt() -> bool:
 
 
 async def main():
+    from core.service_manager import service_manager
+    await service_manager.start_services()
+    try:
+        await _main_impl()
+    finally:
+        await asyncio.shield(service_manager.stop_services())
+
+async def _main_impl():
     # Propagate CLI arguments directly to environment variables before initializing the provider
     if args.backend:
         os.environ["LLM_BACKEND"] = args.backend
@@ -409,14 +417,33 @@ async def main():
         log.error(f"Failed to initialize LLM provider: {e}")
         sys.exit(1)
 
-    # ── Register voice agent in GUI mode ──────────────────────────────────────
+    # ── Register agents ──────────────────────────────────────────────────────
+    from agents.sysadmin_agent import register as reg_sysadmin
+    reg_sysadmin()
+
+    from agents.memory_agent import register as reg_memory
+    memory = reg_memory()
+
+    from agents.web_agent import register as reg_web
+    reg_web()
+
+    from agents.hands_agent import register as reg_hands
+    reg_hands()
+
+    from agents.eyes_agent import register as reg_eyes
+    reg_eyes()
+
     if not args.cli:
         from agents.voice_agent import register as reg_voice
         reg_voice()
 
+    # ── Wire brain ───────────────────────────────────────────────────────────
+    from core.brain import brain
+    brain.inject_memory_agent(memory)
+
     # ── Start kernel listener (background task) ───────────────────────────────
     from kernel.kernel_listener import start as start_kernel
-    kernel_task = asyncio.create_task(start_kernel(None))
+    kernel_task = asyncio.create_task(start_kernel(brain))
     log.info("Kernel listener started ✓")
 
     # ── Print banner ─────────────────────────────────────────────────────────
@@ -590,9 +617,9 @@ async def main():
                     if used_voice:
                         session_text_queue.put(sentence)
 
-                # Run run_direct_llm inside an asyncio task
+                # Run brain.process inside an asyncio task
                 brain_task = asyncio.create_task(
-                    run_direct_llm(
+                    brain.process(
                         user_input,
                         on_chunk=on_chunk,
                         on_sentence=on_sentence
@@ -766,7 +793,7 @@ async def main():
             try:
                 await brain.state_machine.transition(State.THINKING)
                 brain_process_task = asyncio.create_task(
-                    run_direct_llm(prompt, on_chunk=on_chunk, on_sentence=on_sentence)
+                    brain.process(prompt, on_chunk=on_chunk, on_sentence=on_sentence)
                 )
                 
                 if voice_interrupt_enabled:

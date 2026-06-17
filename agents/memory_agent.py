@@ -16,10 +16,13 @@ Bus handlers registered via register().
 import json
 import os
 import logging
+import uuid
+import asyncio
 from datetime import datetime
 from pathlib import Path
 
 from core.ipc_bus import bus
+from core.supermemory_client import SupermemoryClient
 
 log = logging.getLogger("memory_agent")
 
@@ -82,14 +85,15 @@ class MemoryAgent:
     def __init__(self):
         STORE_DIR.mkdir(parents=True, exist_ok=True)
         log.info(f"Memory store at: {STORE_DIR.resolve()}")
+        self.session_id = f"session_{uuid.uuid4().hex[:8]}"
+        self.sm_client = SupermemoryClient()
 
     # ── Core Operations ──────────────────────────────────────────────────────
 
     async def update_memory(self, key: str, data) -> dict:
         """
         Write or merge data into memory/store/{key}.json.
-        If existing value is a dict and new data is a dict → shallow merge.
-        Otherwise → replace.
+        Also writes/ingests into the Supermemory Graph DB.
         """
         path = _key_to_path(key)
 
@@ -111,56 +115,107 @@ class MemoryAgent:
             "updated_at": datetime.now().isoformat(),
         }
 
+        # 1. Update local cache/file
         try:
             with open(path, "w") as f:
                 json.dump(payload, f, indent=2)
-            log.info(f"Memory updated: {key}")
-            return {"ok": True, "key": key}
+            log.info(f"Memory updated locally: {key}")
         except OSError as e:
-            log.error(f"Memory write failed for '{key}': {e}")
+            log.error(f"Memory local write failed for '{key}': {e}")
             return {"error": str(e)}
+
+        # 2. Update Supermemory Graph DB
+        try:
+            if key == "last_interaction":
+                # Ingest conversation turn
+                if isinstance(data, dict):
+                    user_text = data.get("user", "")
+                    response_text = data.get("response", "")
+                    if user_text and response_text:
+                        messages = [
+                            {"role": "user", "content": user_text},
+                            {"role": "assistant", "content": response_text}
+                        ]
+                        def run_ingest():
+                            return self.sm_client.ingest_conversation(
+                                conversation_id=self.session_id,
+                                messages=messages,
+                                container_tags=["personal_notes"]
+                            )
+                        # Run sync requests inside a thread pool
+                        asyncio.create_task(asyncio.to_thread(run_ingest))
+            else:
+                # Format fact and add memory
+                fact_str = f"{key}: {json.dumps(merged)}" if isinstance(merged, (dict, list)) else f"{key}: {merged}"
+                def run_add_mem():
+                    return self.sm_client.add_memories(
+                        memories=[fact_str],
+                        container_tag="personal_notes"
+                    )
+                asyncio.create_task(asyncio.to_thread(run_add_mem))
+        except Exception as e:
+            log.warning(f"Failed to propagate memory '{key}' to Supermemory Graph DB: {e}")
+
+        return {"ok": True, "key": key}
 
     async def fetch_memory(self, keys: list[str]) -> dict:
         """
         Retrieve memory for a list of keys using fuzzy matching.
-
-        For each requested key:
-          1. Try exact match first.
-          2. If no exact match, fuzzy-match against all stored keys.
-          3. Return {requested_key: data} so the model gets what it asked for.
-
-        Missing keys with no fuzzy match are silently skipped.
+        Combines exact/fuzzy local JSON retrieval with semantic Supermemory Graph DB lookup.
         """
         stored_keys = self.list_keys()
         result = {}
 
         for requested_key in keys:
-            # Try exact first
+            # 1. Local exact/fuzzy lookup
             exact_path = _key_to_path(requested_key)
+            local_found = False
             if exact_path.exists():
                 try:
                     with open(exact_path) as f:
                         payload = json.load(f)
                     result[requested_key] = payload.get("data")
-                    continue
+                    local_found = True
                 except (json.JSONDecodeError, OSError) as e:
-                    log.warning(f"Memory read failed for '{requested_key}': {e}")
-                    continue
+                    log.warning(f"Local memory read failed for '{requested_key}': {e}")
 
-            # Fuzzy match
-            matched_key = _fuzzy_match(requested_key, stored_keys)
-            if matched_key:
-                matched_path = _key_to_path(matched_key)
-                try:
-                    with open(matched_path) as f:
-                        payload = json.load(f)
-                    log.info(f"Fuzzy match: '{requested_key}' → '{matched_key}'")
-                    # Return under the requested key so model finds it naturally
-                    result[requested_key] = payload.get("data")
-                except (json.JSONDecodeError, OSError) as e:
-                    log.warning(f"Memory read failed for fuzzy match '{matched_key}': {e}")
-            else:
-                log.info(f"No match found for key '{requested_key}' (stored: {stored_keys})")
+            if not local_found:
+                matched_key = _fuzzy_match(requested_key, stored_keys)
+                if matched_key:
+                    matched_path = _key_to_path(matched_key)
+                    try:
+                        with open(matched_path) as f:
+                            payload = json.load(f)
+                        result[requested_key] = payload.get("data")
+                        local_found = True
+                        log.info(f"Local fuzzy match: '{requested_key}' → '{matched_key}'")
+                    except (json.JSONDecodeError, OSError) as e:
+                        log.warning(f"Local memory read failed for fuzzy match '{matched_key}': {e}")
+
+            # 2. Supermemory Graph DB lookup
+            try:
+                def query_sm():
+                    return self.sm_client.search_memories(query=requested_key, container_tag="personal_notes", limit=3)
+                
+                sm_results = await asyncio.to_thread(query_sm)
+                facts = [m.get("content") for m in sm_results if m.get("content")]
+                if facts:
+                    # Merge Graph DB results with local KV results
+                    if requested_key in result:
+                        val = result[requested_key]
+                        if isinstance(val, dict):
+                            val["semantic_facts"] = facts
+                        elif isinstance(val, list):
+                            result[requested_key] = val + facts
+                        else:
+                            result[requested_key] = [val] + facts
+                    else:
+                        result[requested_key] = facts
+            except Exception as e:
+                log.warning(f"Supermemory search failed for '{requested_key}': {e}")
+
+            if requested_key not in result:
+                log.info(f"No match found for key '{requested_key}' locally or in Graph DB.")
 
         return result
 

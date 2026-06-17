@@ -48,6 +48,31 @@ _RETRY_HINT = (
 )
 
 
+def format_memory_context(memory_dict: dict) -> str:
+    if not memory_dict:
+        return "(empty)"
+    
+    parts = []
+    profile = memory_dict.get("user_profile", "").strip()
+    if profile:
+        parts.append(f"User Profile:\n  {profile}")
+        
+    memories = [m.strip() for m in memory_dict.get("relevant_memories", []) if m.strip()]
+    if memories:
+        parts.append("Relevant Facts/Memories:")
+        for m in memories:
+            parts.append(f"  - {m}")
+            
+    docs = [d.strip() for d in memory_dict.get("relevant_documents", []) if d.strip()]
+    if docs:
+        parts.append("Relevant Document Snippets:")
+        for d in docs:
+            flat = d.replace("\n", " ")
+            parts.append(f"  - {flat}")
+            
+    return "\n".join(parts) if parts else "(empty)"
+
+
 # ── Unified System Prompt (first call — lightweight) ─────────────────────────
 def build_unified_prompt(context: dict) -> str:
     """
@@ -56,7 +81,7 @@ def build_unified_prompt(context: dict) -> str:
     The model decides: plain text reply = conversational, JSON tool call = agentic.
     """
     available    = bus.registered_tools()
-    memory_str   = json.dumps(context.get("memory", {}), indent=2)
+    memory_str   = format_memory_context(context.get("memory", {}))
     open_windows = context.get("open_windows", [])
     windows_str  = "\n".join(f"  - {w}" for w in open_windows) if open_windows else "  (none detected)"
 
@@ -114,7 +139,7 @@ def build_unified_prompt(context: dict) -> str:
         f"logs_dir      : {context.get('logs_dir', 'unknown')}\n"
         "\n"
         "=== INJECTED MEMORY ===\n"
-        + (memory_str if memory_str != "{}" else "(empty — nothing stored yet)")
+        + memory_str
     )
 
 
@@ -122,7 +147,7 @@ def build_unified_prompt(context: dict) -> str:
 def build_system_prompt(context: dict) -> str:
     available   = bus.registered_tools()
     schemas_str = json.dumps(TOOL_SCHEMAS, indent=2)
-    memory_str  = json.dumps(context.get("memory", {}), indent=2)
+    memory_str  = format_memory_context(context.get("memory", {}))
     events_str  = json.dumps(context.get("recent_events", [])[-5:], indent=2)
 
     return (
@@ -194,7 +219,7 @@ def build_system_prompt(context: dict) -> str:
         f"recent_events : {events_str}\n"
         "\n"
         "=== INJECTED MEMORY ===\n"
-        + (memory_str if memory_str != "{}" else "(empty)")
+        + memory_str
         + "\n\n"
         "=== EXAMPLES ===\n"
         'User: "list all open windows"\n'
@@ -827,6 +852,78 @@ async def build_context(memory_agent, kernel_events: list, user_prompt: str = ""
             pass
 
     memory = {}
+    if user_prompt:
+        lowered = user_prompt.lower().strip().strip("?!.")
+        is_greeting = lowered in {
+            "hi", "hello", "hey", "yo", "good morning", "good afternoon", "good evening",
+            "who are you", "what is your name", "tell me about yourself", "bye", "goodbye", "exit", "quit"
+        }
+        if not is_greeting:
+            try:
+                from core.supermemory_client import SupermemoryClient
+                sm = SupermemoryClient()
+
+                async def fetch_docs():
+                    try:
+                        return await asyncio.to_thread(
+                            sm.search_all,
+                            query=user_prompt,
+                            container_tags=["personal_notes", "projects"],
+                            limit=2
+                        )
+                    except Exception as ex:
+                        log.warning(f"Error fetching docs from SM: {ex}")
+                        return []
+
+                async def fetch_mems():
+                    try:
+                        return await asyncio.to_thread(
+                            sm.search_memories,
+                            query=user_prompt,
+                            container_tag="personal_notes",
+                            limit=2
+                        )
+                    except Exception as ex:
+                        log.warning(f"Error fetching memories from SM: {ex}")
+                        return []
+
+                async def fetch_prof():
+                    try:
+                        return await asyncio.to_thread(
+                            sm.get_profile,
+                            container_tag="personal_notes",
+                            query=user_prompt
+                        )
+                    except Exception as ex:
+                        log.warning(f"Error fetching profile from SM: {ex}")
+                        return {}
+
+                doc_chunks, memory_results, profile_data = await asyncio.gather(
+                    fetch_docs(),
+                    fetch_mems(),
+                    fetch_prof()
+                )
+
+                documents = []
+                for item in doc_chunks:
+                    content = item.get("content", "")
+                    if content:
+                        content_clean = content.strip()
+                        if len(content_clean) > 300:
+                            content_clean = content_clean[:300] + "... [truncated]"
+                        documents.append(content_clean)
+
+                memories = [m.get("content", "").strip() for m in memory_results if m.get("content")]
+                profile_text = profile_data.get("profile", "") or profile_data.get("summary", "") or ""
+
+                if documents or memories or profile_text:
+                    memory = {
+                        "relevant_documents": documents,
+                        "relevant_memories": memories,
+                        "user_profile": profile_text
+                    }
+            except Exception as e:
+                log.warning(f"Failed to fetch semantic context from Supermemory: {e}")
 
     cwd = os.getcwd()
 
