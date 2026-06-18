@@ -41,6 +41,11 @@ class StateMachine:
                 return
             log.info(f"State: {self.current.value} → {new_state.value}")
             self.current = new_state
+            try:
+                from core import profiler_emitter
+                profiler_emitter.emit("state_change", state=new_state.value)
+            except Exception:
+                pass
             
             for callback in self.listeners:
                 try:

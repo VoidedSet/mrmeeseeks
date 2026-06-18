@@ -23,6 +23,7 @@ from core.schema_registry import TOOL_SCHEMAS, VISIBLE_TOOL_SCHEMAS, validate_to
 from core.ipc_bus import bus
 from core.state_machine import StateMachine, State
 import core.llm_provider as llm_mod
+from core import profiler_emitter
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [BRAIN] %(message)s")
@@ -305,49 +306,53 @@ class ConversationHistory:
         if not self.messages:
             return
 
-        provider = llm_mod.provider
-        if provider is None:
-            log.warning("Compression skipped — provider not initialized.")
-            self.messages = self.messages[-5:]
-            return
-
-        log.info("Compressing context...")
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        raw_path  = f"logs/raw/chat_{timestamp}.json"
+        profiler_emitter.emit("function_call", name="ConversationHistory.compress", status="start")
         try:
-            os.makedirs("logs/raw", exist_ok=True)
-            with open(raw_path, "w") as f:
-                json.dump(self.messages, f, indent=2)
-            log.info(f"Raw log saved → {raw_path}")
-        except Exception as e:
-            log.warning(f"Failed to save raw log: {e}")
+            provider = llm_mod.provider
+            if provider is None:
+                log.warning("Compression skipped — provider not initialized.")
+                self.messages = self.messages[-5:]
+                return
 
-        summary_prompt = (
-            "Summarize this conversation in bullet points. "
-            "Capture: what user asked, what was done, key facts learned, errors hit. "
-            "Be dense. No fluff. Output plain text summary only.\n\n"
-            + "\n".join(f"{m['role']}: {m['content']}" for m in self.messages)
-        )
+            log.info("Compressing context...")
 
-        try:
-            summary = await provider.complete(
-                system_prompt="You are a summarizer. Output plain text only. No JSON.",
-                messages=[{"role": "user", "content": summary_prompt}],
-                temperature=0.1,
-                max_tokens=512,
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            raw_path  = f"logs/raw/chat_{timestamp}.json"
+            try:
+                os.makedirs("logs/raw", exist_ok=True)
+                with open(raw_path, "w") as f:
+                    json.dump(self.messages, f, indent=2)
+                log.info(f"Raw log saved → {raw_path}")
+            except Exception as e:
+                log.warning(f"Failed to save raw log: {e}")
+
+            summary_prompt = (
+                "Summarize this conversation in bullet points. "
+                "Capture: what user asked, what was done, key facts learned, errors hit. "
+                "Be dense. No fluff. Output plain text summary only.\n\n"
+                + "\n".join(f"{m['role']}: {m['content']}" for m in self.messages)
             )
-        except Exception as e:
-            log.warning(f"Compression LLM call failed: {e}. Keeping last 10 messages.")
-            self.messages = self.messages[-10:]
-            return
 
-        self.messages = [{
-            "role": "system",
-            "content": f"[CONVERSATION SUMMARY — {datetime.now().strftime('%H:%M')}]\n{summary}"
-        }]
-        self._last_compress_time = time.time()
-        log.info("Context compressed ✓")
+            try:
+                summary = await provider.complete(
+                    system_prompt="You are a summarizer. Output plain text only. No JSON.",
+                    messages=[{"role": "user", "content": summary_prompt}],
+                    temperature=0.1,
+                    max_tokens=512,
+                )
+            except Exception as e:
+                log.warning(f"Compression LLM call failed: {e}. Keeping last 10 messages.")
+                self.messages = self.messages[-10:]
+                return
+
+            self.messages = [{
+                "role": "system",
+                "content": f"[CONVERSATION SUMMARY — {datetime.now().strftime('%H:%M')}]\n{summary}"
+            }]
+            self._last_compress_time = time.time()
+            log.info("Context compressed ✓")
+        finally:
+            profiler_emitter.emit("function_call", name="ConversationHistory.compress", status="end")
 
 
 # ── JSON Parser (hardened) ────────────────────────────────────────────────────
@@ -449,6 +454,8 @@ async def unified_stream_call(
     if provider is None:
         return "LLM provider not initialized.", None
 
+    profiler_emitter.emit("llm_start", prompt=user_input, provider=provider.__class__.__name__)
+
     system_prompt = build_unified_prompt()
     messages = history.messages.copy()
     user_content = format_user_message_with_context(user_input, context)
@@ -479,6 +486,7 @@ async def unified_stream_call(
             
             content_chunk = chunk.get("content", "")
             if content_chunk:
+                profiler_emitter.emit("llm_chunk", chunk=content_chunk)
                 full_content += content_chunk
                 
                 # If we haven't decided if it's agentic or not, check for typical JSON/tool-call starts in the text
@@ -505,6 +513,7 @@ async def unified_stream_call(
 
     except Exception as e:
         log.exception(f"Unified stream LLM call failed: {e}")
+        profiler_emitter.emit("llm_end", error=str(e), is_agentic=False)
         return f"Sorry, something went wrong: {e}", None
 
     full_content = full_content.strip()
@@ -518,6 +527,7 @@ async def unified_stream_call(
             "tool": tc.get("name"),
             "args": tc.get("args", {})
         }
+        profiler_emitter.emit("llm_end", is_agentic=True, tool_call=tool_call, full_content=full_content)
         valid, error = validate_tool_call(tool_call)
         if valid:
             log.info(f"Unified stream → AGENTIC tool: {tool_call.get('tool')}")
@@ -529,6 +539,7 @@ async def unified_stream_call(
     # 2. Textual tool call check (fallback)
     tool_call = parse_tool_call(full_content)
     if tool_call is not None:
+        profiler_emitter.emit("llm_end", is_agentic=True, tool_call=tool_call, full_content=full_content)
         valid, error = validate_tool_call(tool_call)
         if valid:
             log.info(f"Unified stream (text fallback) → AGENTIC tool: {tool_call.get('tool')}")
@@ -548,10 +559,12 @@ async def unified_stream_call(
                 or parsed.get("args", {}).get("speech")
                 or full_content
             )
+            profiler_emitter.emit("llm_end", is_agentic=False, full_content=str(text))
             return str(text), None
         except json.JSONDecodeError:
             pass
 
+    profiler_emitter.emit("llm_end", is_agentic=False, full_content=full_content)
     return full_content, None
 
 
@@ -573,6 +586,8 @@ async def unified_first_call(
     if provider is None:
         return "LLM provider not initialized.", None
 
+    profiler_emitter.emit("llm_start", prompt=user_input, provider=provider.__class__.__name__)
+
     system_prompt = build_unified_prompt()
 
     messages = history.messages.copy()
@@ -592,6 +607,7 @@ async def unified_first_call(
         )
     except Exception as e:
         log.error(f"Unified LLM call failed: {e}")
+        profiler_emitter.emit("llm_end", error=str(e), is_agentic=False)
         return f"Sorry, something went wrong: {e}", None
 
     raw_content = response.get("content", "").strip()
@@ -611,6 +627,7 @@ async def unified_first_call(
         tool_call = parse_tool_call(raw_content)
 
     if tool_call is not None:
+        profiler_emitter.emit("llm_end", is_agentic=True, tool_call=tool_call, full_content=raw_content)
         valid, error = validate_tool_call(tool_call)
         if valid:
             log.info(f"Unified → AGENTIC (tool: {tool_call.get('tool')})")
@@ -633,9 +650,12 @@ async def unified_first_call(
                 or parsed.get("args", {}).get("speech")
                 or raw_content
             )
+            profiler_emitter.emit("llm_end", is_agentic=False, full_content=str(text))
             return str(text), None
         except json.JSONDecodeError:
             pass
+
+    profiler_emitter.emit("llm_end", is_agentic=False, full_content=raw_content)
 
     return raw_content, None
 
@@ -646,7 +666,20 @@ async def react_loop(
     history: ConversationHistory,
     context: dict,
     first_tool_call: Optional[dict] = None,
-) -> str:
+) -> tuple[str, list, bool]:
+    profiler_emitter.emit("function_call", name="brain.react_loop", status="start")
+    try:
+        speech, all_tool_calls, success = await _react_loop_impl(user_input, history, context, first_tool_call)
+        return speech, all_tool_calls, success
+    finally:
+        profiler_emitter.emit("function_call", name="brain.react_loop", status="end")
+
+async def _react_loop_impl(
+    user_input: str,
+    history: ConversationHistory,
+    context: dict,
+    first_tool_call: Optional[dict] = None,
+) -> tuple[str, list, bool]:
     """
     Full ReAct loop for agentic inputs.
     Think → emit tool call → observe result → repeat → done.
@@ -690,6 +723,8 @@ async def react_loop(
         tool_args = first_tool_call.get("args", {})
         thought   = first_tool_call.get("thought", "")
 
+        profiler_emitter.emit("react_step", step=steps, thought=thought, tool=tool_name, args=tool_args)
+
         if thought:
             log.info(f"Thought: {thought}")
 
@@ -706,15 +741,18 @@ async def react_loop(
             speech = tool_args.get("speech", "Done.")
             history.add("assistant", json.dumps(first_tool_call))
             log.info(f"ReAct done (immediate). Speech: {speech}")
+            profiler_emitter.emit("agent_response", speech=speech)
             return speech, all_tool_calls, True
         else:
             action_key = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}"
             seen_actions[action_key] = 1
 
             log.info(f"Dispatching → {tool_name}({tool_args})")
+            profiler_emitter.emit("tool_dispatch", tool=tool_name, args=tool_args)
             await brain.state_machine.transition(State.ACTING)
             result = await bus.dispatch(tool_name, tool_args)
             await brain.state_machine.transition(State.THINKING)
+            profiler_emitter.emit("tool_result", tool=tool_name, result=str(result))
             log.info(f"Result: {str(result)[:300]}")
 
             result_str = json.dumps(result)
@@ -799,6 +837,8 @@ async def react_loop(
         tool_args = tool_call.get("args", {})
         thought   = tool_call.get("thought", "")
 
+        profiler_emitter.emit("react_step", step=steps, thought=thought, tool=tool_name, args=tool_args)
+
         if thought:
             log.info(f"Thought: {thought}")
 
@@ -807,6 +847,7 @@ async def react_loop(
             speech = tool_args.get("speech", "Done.")
             history.add("assistant", raw_output)
             log.info(f"ReAct done. Speech: {speech}")
+            profiler_emitter.emit("agent_response", speech=speech)
             return speech, all_tool_calls, True
 
         if tool_name not in ("done",):
@@ -834,9 +875,11 @@ async def react_loop(
 
         # ── Dispatch ──────────────────────────────────────────────────────────
         log.info(f"Dispatching → {tool_name}({tool_args})")
+        profiler_emitter.emit("tool_dispatch", tool=tool_name, args=tool_args)
         await brain.state_machine.transition(State.ACTING)
         result = await bus.dispatch(tool_name, tool_args)
         await brain.state_machine.transition(State.THINKING)
+        profiler_emitter.emit("tool_result", tool=tool_name, result=str(result))
         log.info(f"Result: {str(result)[:300]}")
 
         result_str = json.dumps(result)
@@ -1015,9 +1058,13 @@ class Brain:
           2a. If plain text -> stream directly to console and TTS
           2b. If tool call -> enter react_loop (agentic path)
         """
+        profiler_emitter.emit("user_input", prompt=user_input)
+        profiler_emitter.emit("function_call", name="brain.process", status="start")
         await self.state_machine.transition(State.THINKING)
 
+        profiler_emitter.emit("function_call", name="build_context", status="start")
         context = await build_context(self.memory_agent, self.kernel_events, user_input)
+        profiler_emitter.emit("function_call", name="build_context", status="end")
 
         plain_text, tool_call = await unified_stream_call(
             user_input=user_input,
@@ -1033,6 +1080,7 @@ class Brain:
             self.history.add("assistant", plain_text)
             speech = plain_text
             self.last_interaction = None
+            profiler_emitter.emit("agent_response", speech=plain_text)
         else:
             # Agentic: model emitted a tool call — enter ReAct loop
             speech, tool_calls, success = await react_loop(
@@ -1074,6 +1122,7 @@ class Brain:
             await self.history.compress()
 
         await self.state_machine.transition(State.IDLE)
+        profiler_emitter.emit("function_call", name="brain.process", status="end")
         return speech
 
 

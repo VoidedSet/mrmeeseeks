@@ -3,13 +3,15 @@ import json
 import asyncio
 import logging
 
+from subsystems.profiler import emitter as profiler_emitter
+
 log = logging.getLogger("sentinel")
 
 class SentinelListener:
     def __init__(self, brain_ref=None):
         self.brain_ref = brain_ref
         self.socket_path = "/tmp/meeseeks_sentinel.sock"
-        self.sentinel_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sentinel/build/sentinel-daemon"))
+        self.sentinel_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "daemon/build/sentinel-daemon"))
         self.server = None
         self.process = None
         self.keep_running = False
@@ -49,6 +51,7 @@ class SentinelListener:
                 
                 try:
                     payload = json.loads(line.decode("utf-8").strip())
+                    profiler_emitter.emit("sentinel_event", payload=payload)
                     # Dispatch to brain
                     if self.brain_ref is not None:
                         # Schedule task so it doesn't block the socket loop
