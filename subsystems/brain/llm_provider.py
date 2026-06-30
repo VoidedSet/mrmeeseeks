@@ -112,9 +112,9 @@ class GroqProvider(LLMProvider):
         if force_json and not tools:
             payload["response_format"] = {"type": "json_object"}
         
-        if tools:
-            payload["tools"] = tools
-            payload["tool_choice"] = "auto"
+        # if tools:
+        #     payload["tools"] = tools
+        #     payload["tool_choice"] = "auto"
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -166,9 +166,9 @@ class GroqProvider(LLMProvider):
             "stream":      True,
         }
 
-        if tools:
-            payload["tools"] = tools
-            payload["tool_choice"] = "auto"
+        # if tools:
+        #     payload["tools"] = tools
+        #     payload["tool_choice"] = "auto"
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -208,11 +208,10 @@ class GroqProvider(LLMProvider):
                             pass
 
 
-# ── Ollama Provider ───────────────────────────────────────────────────────────
 class OllamaProvider(LLMProvider):
     """
     Local Ollama via its native /api/chat endpoint.
-    Returns to this when Ollama + Qwen3 is available.
+    Optimized for fine-tuned inline JSON models.
     """
 
     def __init__(self):
@@ -245,36 +244,34 @@ class OllamaProvider(LLMProvider):
             },
         }
 
-        # Disable/enable reasoning thinking process via think parameter
         think_val = os.environ.get("OLLAMA_THINK", "false").lower().strip() == "true"
         payload["think"] = think_val
 
-        # Ollama JSON mode (fallback if no tools)
-        if force_json and not tools:
+        if force_json:
             payload["format"] = "json"
-            
-        if tools:
-            payload["tools"] = tools
 
         async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.post(self.url, json=payload)
             resp.raise_for_status()
             data = resp.json()
             message = data.get("message", {})
-            content = message.get("content", "") or ""
+            content = (message.get("content", "") or "").strip()
             
             parsed_tools = []
-            if message.get("tool_calls"):
-                for tc in message["tool_calls"]:
-                    func = tc.get("function", {})
-                    args_dict = func.get("arguments", {})
-                    parsed_tools.append({
-                        "name": func.get("name"),
-                        "args": args_dict
-                    })
+            # Intercept raw text JSON outputs and inject them into agent tool pipeline
+            if content.startswith("{"):
+                try:
+                    js = json.loads(content)
+                    if "tool" in js and js["tool"] != "done":
+                        parsed_tools.append({
+                            "name": js["tool"],
+                            "args": js.get("args", {})
+                        })
+                except Exception:
+                    pass
 
         log.debug(f"[Ollama] raw → {content[:200]}")
-        return {"content": content.strip(), "tool_calls": parsed_tools}
+        return {"content": content, "tool_calls": parsed_tools}
 
     async def stream_complete(
         self,
@@ -295,13 +292,13 @@ class OllamaProvider(LLMProvider):
             },
         }
 
-        # Disable/enable reasoning thinking process via think parameter
         think_val = os.environ.get("OLLAMA_THINK", "false").lower().strip() == "true"
         payload["think"] = think_val
 
-        if tools:
-            payload["tools"] = tools
+        # Native tools completely commented out to block 400 Bad Request
+        # if tools: payload["tools"] = tools
 
+        buffer = ""
         async with httpx.AsyncClient(timeout=60) as client:
             async with client.stream("POST", self.url, json=payload) as resp:
                 resp.raise_for_status()
@@ -314,18 +311,24 @@ class OllamaProvider(LLMProvider):
                         content = message.get("content", "")
                         if content:
                             yield {"content": content}
-                        if message.get("tool_calls"):
-                            parsed_tcs = []
-                            for tc in message["tool_calls"]:
-                                func = tc.get("function", {})
-                                parsed_tcs.append({
-                                    "name": func.get("name"),
-                                    "args": func.get("arguments", {})
-                                })
-                            yield {"tool_calls": parsed_tcs}
+                            buffer += content
                     except Exception:
                         pass
-
+                
+                # Check stream completion for tool execution strings
+                buffer = buffer.strip()
+                if buffer.startswith("{"):
+                    try:
+                        js = json.loads(buffer)
+                        if "tool" in js and js["tool"] != "done":
+                            yield {
+                                "tool_calls": [{
+                                    "name": js["tool"],
+                                    "args": js.get("args", {})
+                                }]
+                            }
+                    except Exception:
+                        pass
 
 # ── Factory ───────────────────────────────────────────────────────────────────
 def create_provider() -> LLMProvider:

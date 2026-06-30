@@ -1,8 +1,11 @@
 import os
 import sys
 
-# Add project root to sys.path so core and other packages can be imported
-_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Add backup directory and project root to sys.path so backup/core can be imported as core
+_backup_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_backup_dir)
+if _backup_dir not in sys.path:
+    sys.path.insert(0, _backup_dir)
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
@@ -425,6 +428,66 @@ def check_stdin_interrupt() -> bool:
         return True
     return False
 
+def calibrate_threshold(duration=1.0, safety_multiplier=2.5) -> float:
+    import sounddevice as sd
+    print("[Init] Calibrating microphone noise floor... Please keep quiet.", flush=True)
+    sample_rate = 16000
+    chunk_size = 1024
+    rms_values = []
+    
+    with sd.InputStream(samplerate=sample_rate, channels=1, dtype='float32', blocksize=chunk_size) as stream:
+        start_time = time.time()
+        while time.time() - start_time < duration:
+            data, _ = stream.read(chunk_size)
+            rms = np.sqrt(np.mean(data**2))
+            rms_values.append(rms)
+            time.sleep(0.01)
+            
+    mean_rms = np.mean(rms_values)
+    max_rms = np.max(rms_values)
+    threshold = max_rms * safety_multiplier
+    threshold = max(0.015, min(threshold, 0.08))
+    print(f"[Init] Noise floor calibrated: mean={mean_rms:.4f}, max={max_rms:.4f} -> Threshold set to {threshold:.4f} ✓", flush=True)
+    return threshold
+
+
+def record_until_silence(threshold=0.02, silence_limit=1.2) -> np.ndarray:
+    import sounddevice as sd
+    sample_rate = 16000
+    chunk_size = 1024
+    audio_data = []
+    speaking = False
+    silence_start = None
+    
+    print("\n🎙️  [Meeseeks] Listening... Speak now.", flush=True)
+    
+    with sd.InputStream(samplerate=sample_rate, channels=1, dtype='float32', blocksize=chunk_size) as stream:
+        while True:
+            data, overflow = stream.read(chunk_size)
+            rms = np.sqrt(np.mean(data**2))
+            
+            if not speaking:
+                if rms > threshold:
+                    speaking = True
+                    print("[System] User speaking...", flush=True)
+                    audio_data.append(data)
+            else:
+                audio_data.append(data)
+                if rms < threshold:
+                    if silence_start is None:
+                        silence_start = time.time()
+                    elif time.time() - silence_start >= silence_limit:
+                        break
+                else:
+                    silence_start = None
+                    
+            time.sleep(0.01)
+            
+    if not audio_data:
+        return None
+    return np.concatenate(audio_data, axis=0).flatten()
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 async def main():
     global start_time, first_token_time, first_audio_played_time, total_tokens_received, sentence_count
@@ -516,7 +579,7 @@ async def main():
     # 4. Initialize Whisper STT (CPU)
     print("[Init] Loading Local Whisper STT model (tiny.en)...")
     try:
-        from subsystems.voice.voice_input import VoiceInputManager
+        from core.voice_input import VoiceInputManager
         voice_input_mgr = VoiceInputManager()
         voice_input_mgr.load_model()
         print("[Init] Whisper STT ready ✓")
@@ -526,62 +589,33 @@ async def main():
         
     print("\nInitialization completed successfully! Entering interactive loop.\n")
     print("Instructions:")
-    print("  1. Press ENTER to start recording your speech.")
-    print("  2. Speak into your microphone.")
-    print("  3. Press ENTER again to stop recording and send your query.")
-    print("  4. Type 'exit' and press Enter to quit.\n")
+    print("  1. The system will calibrate your microphone noise floor first.")
+    print("  2. Speak into your microphone. It will auto-detect when you start and stop.")
+    print("  3. Press Ctrl+C in this terminal to exit.\n")
     
     # Event loop state
-    interrupted_by_voice = False
-    shared_audio_data = []
-    vi_thread = None
-    stop_listening_event = None
-    audio_lock = threading.Lock()
+    calibrated_threshold = calibrate_threshold(duration=1.5, safety_multiplier=2.5)
     
     while True:
         try:
-            if not interrupted_by_voice:
-                cmd = input("Press ENTER to speak (or type 'exit' to quit): ").strip().lower()
-                if cmd == "exit":
-                    break
-                    
-                # Record and transcribe
-                user_text = voice_input_mgr.record_and_transcribe()
-                if not user_text:
-                    print("[System] No speech detected. Try again.")
-                    continue
-            else:
-                # We were interrupted by voice, so we are already recording!
-                # We just wait for the user to press ENTER to stop recording.
-                print("\n🎙️  [Meeseeks] Listening... Press ENTER to stop recording.")
-                input()  # Blocks until user presses Enter
+            # Record until silence (blocks until user speaks and finishes)
+            audio = record_until_silence(threshold=calibrated_threshold, silence_limit=1.3)
+            if audio is None or len(audio) < 16000 * 0.5:
+                continue
                 
-                # Signal the listener thread to stop (this closes the stream)
-                if stop_listening_event:
-                    stop_listening_event.set()
-                if vi_thread:
-                    vi_thread.join(timeout=2.0)
+            print("[System] Transcribing speech...", flush=True)
+            segments, _ = voice_input_mgr.model.transcribe(audio, beam_size=1)
+            user_text = " ".join([seg.text for seg in segments]).strip()
+            
+            if not user_text:
+                print("[System] No speech detected. Try again.")
+                continue
                 
-                # Transcribe the accumulated audio data
-                with audio_lock:
-                    if shared_audio_data:
-                        audio = np.concatenate(shared_audio_data, axis=0).flatten()
-                        print("[System] Transcribing your full input...")
-                        segments, _ = voice_input_mgr.model.transcribe(audio, beam_size=1)
-                        user_text = " ".join([seg.text for seg in segments]).strip()
-                    else:
-                        user_text = ""
-                
-                # Reset event loop state
-                interrupted_by_voice = False
-                shared_audio_data = []
-                vi_thread = None
-                stop_listening_event = None
-                
-                if not user_text:
-                    print("[System] No speech detected. Try again.")
-                    continue
-                print(f"\nYou (Voice): {user_text}")
+            print(f"\nYou (Voice): {user_text}")
+            
+            if user_text.lower() in {"exit", "quit", "bye"}:
+                print("[Meeseeks] Goodbye.")
+                break
                 
             print("[Meeseeks] Thinking...", flush=True)
             
@@ -594,7 +628,6 @@ async def main():
             # Create session-specific queues
             session_text_queue = queue.Queue()
             session_audio_queue = queue.Queue(maxsize=3)
-            
             playback_stream_ref = [None]
             
             # Start worker threads
@@ -611,106 +644,24 @@ async def main():
             s_thread.start()
             p_thread.start()
             
-            # Start background voice interrupt listener if enabled
-            voice_interrupt_flag = threading.Event()
-            stop_listening_event = threading.Event()
-            shared_audio_data = []
-            vi_thread = None
-            if voice_interrupt_enabled:
-                vi_thread = threading.Thread(
-                    target=voice_interrupt_worker,
-                    args=(voice_input_mgr.model, voice_interrupt_flag, stop_listening_event, shared_audio_data, audio_lock),
-                    daemon=True
-                )
-                vi_thread.start()
-                
             # Run the generation pipeline in the background
             pipeline_task = asyncio.create_task(
                 run_streaming_pipeline(user_text, args.backend, api_key, ollama_url, llm_model, session_text_queue)
             )
             
-            interrupted = False
-            try:
-                # Non-blocking wait loop that monitors for user ENTER interrupts
-                print(f"--- {'Press ENTER or speak 3+ words to interrupt' if voice_interrupt_enabled else 'Press ENTER to interrupt'} ---")
-                if voice_interrupt_enabled:
-                    print("[System] Voice interrupt active. (Use headphones to prevent speaker feedback!)")
-                    
-                while True:
-                    key_interrupt = check_stdin_interrupt()
-                    voice_interrupt = voice_interrupt_flag.is_set()
-                    
-                    if key_interrupt or voice_interrupt:
-                        interrupted = True
-                        
-                        # Stop audio playback immediately without affecting recording
-                        if playback_stream_ref[0] is not None:
-                            try:
-                                playback_stream_ref[0].abort()
-                            except Exception:
-                                pass
-                        
-                        # Clear queues
-                        while not session_text_queue.empty():
-                            try:
-                                session_text_queue.get_nowait()
-                                session_text_queue.task_done()
-                            except (queue.Empty, ValueError):
-                                pass
-                        while not session_audio_queue.empty():
-                            try:
-                                session_audio_queue.get_nowait()
-                                session_audio_queue.task_done()
-                            except (queue.Empty, ValueError):
-                                pass
-                                
-                        # Force exit worker loops
-                        try:
-                            session_text_queue.put_nowait(None)
-                        except queue.Full:
-                            pass
-                        try:
-                            session_audio_queue.put_nowait(None)
-                        except queue.Full:
-                            pass
-                        
-                        # Cancel the streaming pipeline
-                        pipeline_task.cancel()
-                        
-                        if voice_interrupt:
-                            interrupted_by_voice = True
-                            print("\n🛑 [Voice Interrupt] Stopping Meeseeks speech. Continue speaking...")
-                        else:
-                            interrupted_by_voice = False
-                            print("\n🛑 [Manual Interrupt] Stopping Meeseeks speech...")
-                        break
-                    
-                    # Exit loop if both worker threads have naturally finished
-                    if not s_thread.is_alive() and not p_thread.is_alive():
-                        break
-                        
-                    await asyncio.sleep(0.05)
-            finally:
-                # Always ensure the background listener is stopped, unless it's a voice interrupt
-                if not interrupted_by_voice:
-                    if stop_listening_event:
-                        stop_listening_event.set()
-                
-            if not interrupted:
-                # Wait for threads to naturally clean up
-                s_thread.join(timeout=1.0)
-                p_thread.join(timeout=1.0)
+            # Wait until generation, synthesis, and playback are completely finished.
+            # No barge-in/voice interrupt worker is run to prevent echo self-interrupts.
+            await pipeline_task
+            
+            s_thread.join(timeout=15.0)
+            p_thread.join(timeout=15.0)
             
             print(f"[System] Completed in {time.time() - start_time:.2f}s.\n")
             
         except KeyboardInterrupt:
-            if stop_listening_event:
-                stop_listening_event.set()
             print("\nExiting...")
             break
         except Exception as e:
-            if stop_listening_event:
-                stop_listening_event.set()
             print(f"\n[System] Loop encountered an error: {e}\n")
             
     print("Goodbye!")

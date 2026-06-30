@@ -58,7 +58,12 @@ def _preload_cuda_libs():
     if not sys.platform.startswith("linux"):
         return
         
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    while os.path.exists(project_root) and not os.path.exists(os.path.join(project_root, "venv")):
+        parent = os.path.dirname(project_root)
+        if parent == project_root:
+            break
+        project_root = parent
     site_packages = os.path.join(project_root, "venv", "lib", f"python{sys.version_info.major}.{sys.version_info.minor}", "site-packages")
     nvidia_dir = os.path.join(site_packages, "nvidia")
     
@@ -135,7 +140,7 @@ def _synthesis_worker():
     _preload_cuda_libs()
     
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    model_path = os.path.join(project_root, "models", "kokoro-v1.0.fp16.onnx")
+    model_path = os.path.join(project_root, "models", "kokoro-v1.0.int8.onnx")
     voices_path = os.path.join(project_root, "models", "voices-v1.0.bin")
     
     log.info(f"Initializing Kokoro TTS engine from {model_path}...")
