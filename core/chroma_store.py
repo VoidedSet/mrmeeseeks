@@ -185,7 +185,7 @@ class ChromaStore:
         self.client = chromadb.PersistentClient(path=self.db_dir)
         
         # Initialize local ONNX GPU embedding function (250 MB VRAM cap, 0 Ollama swapping)
-        self.embedding_function = FastGpuEmbeddingFunction()
+        self.embedding_function = FastCpuEmbeddingFunction()
         
         # Initialize or get collections with dimension safety
         self.documents_col = _get_or_create_compat_collection(self.client, "meeseeks_documents", self.embedding_function)
