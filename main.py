@@ -245,7 +245,7 @@ async def _main_impl():
     model   = os.environ.get("LLM_MODEL", "llama-3.1-8b-instant")
     print()
     print("╔══════════════════════════════════════════╗")
-    print("║      F.R.I.D.A.Y. — AI OS COMPANION       ║")
+    print("║       ATHENA — AI OS COMPANION           ║")
     print(f"║  backend: {backend:<10}  model: {model:<14}║")
     print("║  Type your request. Ctrl+C to exit.      ║")
     print("╚══════════════════════════════════════════╝")

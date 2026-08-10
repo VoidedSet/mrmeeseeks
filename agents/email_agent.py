@@ -119,9 +119,13 @@ class EmailAgent:
             mail = self._connect()
             mail.select("INBOX")
 
+            # Default to ALL messages (latest first) if only_unread returns empty, so latest emails are never missed
             search_criteria = "UNSEEN" if only_unread else "ALL"
             status, messages = mail.search(None, search_criteria)
-            if status != "OK":
+            if status != "OK" or not messages[0]:
+                status, messages = mail.search(None, "ALL")
+                
+            if status != "OK" or not messages[0]:
                 return []
 
             email_ids = messages[0].split()
@@ -130,7 +134,8 @@ class EmailAgent:
 
             for e_id in email_ids:
                 try:
-                    _, msg_data = mail.fetch(e_id, "(RFC822)")
+                    # BODY.PEEK[] fetches full email without marking it as READ (\Seen) in Gmail
+                    _, msg_data = mail.fetch(e_id, "(BODY.PEEK[])")
                     for response_part in msg_data:
                         if not isinstance(response_part, tuple):
                             continue

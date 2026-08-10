@@ -18,7 +18,7 @@ log = logging.getLogger("briefing")
 
 
 async def generate_morning_brief(
-    user_name: str = "Kshayik",
+    user_name: str = "my King",
     run_email: bool = True,
     run_news: bool = True,
     run_weather: bool = True,
@@ -38,7 +38,7 @@ async def generate_morning_brief(
     hour = now.hour
     greeting = "Good morning" if hour < 12 else ("Good afternoon" if hour < 17 else "Good evening")
 
-    brief_parts = [f"{greeting}, {user_name}! Happy {day_name}, {date_str}."]
+    brief_parts = [f"{greeting}, {user_name}! Athena reports for duty this {day_name}, {date_str}."]
 
     # Parallel fetch
     tasks = {}
@@ -85,12 +85,12 @@ async def generate_morning_brief(
     if "news" in results and not isinstance(results["news"], Exception):
         brief_parts.append(format_headlines_for_brief(results["news"]))
 
-    brief_parts.append("What would you like to explore first?")
+    brief_parts.append("What strategy shall we execute first, my King?")
 
     return " ".join(brief_parts)
 
 
-async def run_morning_brief(speak_fn=None, user_name: str = "Kshayik", **kwargs):
+async def run_morning_brief(speak_fn=None, user_name: str = "my King", **kwargs):
     """
     Generate and speak the morning brief via Kokoro TTS / IPC bus.
     """
