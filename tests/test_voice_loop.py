@@ -45,11 +45,8 @@ def preload_cuda_libs():
         return
         
     project_root = os.path.dirname(os.path.abspath(__file__))
-    while os.path.exists(project_root) and not os.path.exists(os.path.join(project_root, "venv")):
-        parent = os.path.dirname(project_root)
-        if parent == project_root:
-            break
-        project_root = parent
+    if os.path.basename(project_root) == "tests":
+        project_root = os.path.dirname(project_root)
     site_packages = os.path.join(project_root, "venv", "lib", f"python{sys.version_info.major}.{sys.version_info.minor}", "site-packages")
     nvidia_dir = os.path.join(site_packages, "nvidia")
     
@@ -473,12 +470,9 @@ async def main():
     
     # 3. Initialize Kokoro ONNX on GPU (with 500MB VRAM limit) and CPU
     project_root = os.path.dirname(os.path.abspath(__file__))
-    while os.path.exists(project_root) and not os.path.exists(os.path.join(project_root, "models")):
-        parent = os.path.dirname(project_root)
-        if parent == project_root:
-            break
-        project_root = parent
-    model_path = os.path.join(project_root, "models", "kokoro-v1.0.int8.onnx")
+    if os.path.basename(project_root) == "tests":
+        project_root = os.path.dirname(project_root)
+    model_path = os.path.join(project_root, "models", "kokoro-v1.0.fp16.onnx")
     voices_path = os.path.join(project_root, "models", "voices-v1.0.bin")
     
     if not os.path.exists(model_path) or not os.path.exists(voices_path):
@@ -516,7 +510,7 @@ async def main():
     # 4. Initialize Whisper STT (CPU)
     print("[Init] Loading Local Whisper STT model (tiny.en)...")
     try:
-        from subsystems.voice.voice_input import VoiceInputManager
+        from core.voice_input import VoiceInputManager
         voice_input_mgr = VoiceInputManager()
         voice_input_mgr.load_model()
         print("[Init] Whisper STT ready ✓")

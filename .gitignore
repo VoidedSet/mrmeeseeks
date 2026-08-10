@@ -83,3 +83,9 @@ Thumbs.db
 
 # Supermemory local runtime
 .supermemory/
+
+# Temporary / scratch
+~
+artifacts/
+scratch/
+

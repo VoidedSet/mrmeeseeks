@@ -38,11 +38,6 @@ def preload_cuda_libs():
         return
         
     project_root = os.path.dirname(os.path.abspath(__file__))
-    while os.path.exists(project_root) and not os.path.exists(os.path.join(project_root, "venv")):
-        parent = os.path.dirname(project_root)
-        if parent == project_root:
-            break
-        project_root = parent
     site_packages = os.path.join(project_root, "venv", "lib", f"python{sys.version_info.major}.{sys.version_info.minor}", "site-packages")
     nvidia_dir = os.path.join(site_packages, "nvidia")
     
@@ -348,12 +343,7 @@ async def main():
         
     # 3. Initialize Kokoro ONNX on GPU if available
     project_root = os.path.dirname(os.path.abspath(__file__))
-    while os.path.exists(project_root) and not os.path.exists(os.path.join(project_root, "models")):
-        parent = os.path.dirname(project_root)
-        if parent == project_root:
-            break
-        project_root = parent
-    model_path = os.path.join(project_root, "models", "kokoro-v1.0.int8.onnx")
+    model_path = os.path.join(project_root, "models", "kokoro-v1.0.fp16.onnx")
     voices_path = os.path.join(project_root, "models", "voices-v1.0.bin")
     
     if not os.path.exists(model_path) or not os.path.exists(voices_path):

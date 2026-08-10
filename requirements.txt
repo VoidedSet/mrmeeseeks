@@ -1,32 +1,47 @@
 # Mr Meeseeks — Python Dependencies
 
-# ── Core ──────────────────────────────────────────────────────────────────────
-httpx>=0.28.0          # async HTTP — Groq + Ollama calls
+# ── Core ───────────────────────────────────────────────────────────────────────────
+httpx>=0.28.0          # async HTTP client
 python-dotenv>=1.0.0   # .env loading
-requests>=2.31.0       # sync HTTP — Supermemory API calls
+requests>=2.31.0       # sync HTTP (fallback)
 
-# ── Schema validation ─────────────────────────────────────────────────────────
+# ── Ollama ────────────────────────────────────────────────────────────────────────
+ollama>=0.6.0          # official Ollama Python library (web_search, web_fetch, tool calling)
+
+# ── Schema Validation ───────────────────────────────────────────────────────────────
 pydantic>=2.0.0        # tool schema validation
 
-# ── Document Parsing ──────────────────────────────────────────────────────────
+# ── Document Parsing ────────────────────────────────────────────────────────────────
 pypdf>=4.0.0           # PDF text + image extraction
-Pillow>=10.0.0         # Image loading for OCR
+Pillow>=10.0.0         # image loading for OCR
 
-# ── OCR (image → text → Supermemory) ─────────────────────────────────────────
+# ── OCR ────────────────────────────────────────────────────────────────────────────
 pytesseract>=0.3.10    # Python wrapper for tesseract-ocr
 # Note: also requires system package: sudo apt install tesseract-ocr
 
-# ── Kernel Listeners ──────────────────────────────────────────────────────────
+# ── Kernel Listeners ───────────────────────────────────────────────────────────────
 evdev>=1.6.0           # raw input events for idle detection
 
-# ── Phase 2 — Eyes + Hands ───────────────────────────────────────────────────
+# ── OS Control ──────────────────────────────────────────────────────────────────────
 pyautogui              # mouse/keyboard control
 
-# ── Phase 3 — Voice ──────────────────────────────────────────────────────────
-# faster-whisper        # local STT
-# kokoro-onnx           # local TTS
+# ── Voice ───────────────────────────────────────────────────────────────────────────
+faster-whisper         # local STT (Whisper tiny.en)
+kokoro-onnx            # local TTS (Kokoro ONNX)
+onnxruntime-gpu        # ONNX Runtime with CUDA support for Kokoro
+sounddevice            # audio playback/recording
+numpy                  # audio array processing
+pyaudio                # for openwakeword mic input
+openwakeword           # wake word detection
 
-# ── GUI Overlay ───────────────────────────────────────────────────────────────
+# ── Email ───────────────────────────────────────────────────────────────────────────
+# imaplib is part of Python stdlib — no pip install needed
+beautifulsoup4         # HTML parsing (DDG fallback + email HTML)
+
+# ── GUI Overlay ───────────────────────────────────────────────────────────────────────
 PyQt6>=6.4.0
 qasync>=0.23.0
 pynput>=1.7.6
+
+# ── Vector DB ─────────────────────────────────────────────────────────────────────────
+chromadb>=0.4.0       # local vector DB
