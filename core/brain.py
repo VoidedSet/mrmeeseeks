@@ -966,8 +966,6 @@ async def build_context(memory_agent, kernel_events: list, user_prompt: str = ""
     """
     if user_prompt and not should_query_memory(user_prompt):
         from kernel.kernel_state import state as kernel_state
-        import os
-        from datetime import datetime
         snap = kernel_state.get_snapshot()
         cwd = os.getcwd()
         return {
