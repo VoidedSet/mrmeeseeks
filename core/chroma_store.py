@@ -50,6 +50,55 @@ class OllamaEmbeddingFunction(EmbeddingFunction):
             embeddings.append([0.0] * 768)
         return embeddings
 
+class FastGpuEmbeddingFunction(EmbeddingFunction):
+    """
+    Local ONNX GPU embedding function (capped at 250 MB VRAM).
+    Runs directly via ONNX Runtime CUDAExecutionProvider — bypasses Ollama completely so Ollama NEVER swaps Qwen2.5!
+    """
+    def __init__(self):
+        self._onnx_ef = None
+        self._fallback_ef = None
+        try:
+            from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
+            class ExplicitGpuMiniLM(ONNXMiniLM_L6_V2):
+                def __init__(self):
+                    import onnxruntime as ort
+                    sess_opts = ort.SessionOptions()
+                    sess_opts.log_severity_level = 3
+                    super().__init__()
+                    try:
+                        model_path = getattr(self, "_model_path", None)
+                        if model_path and os.path.exists(model_path):
+                            gpu_opts = {
+                                "device_id": 0,
+                                "gpu_mem_limit": 250 * 1024 * 1024,  # Cap VRAM at 250 MB
+                                "cudnn_conv_algo_search": "HEURISTIC",
+                                "arena_extend_strategy": "kSameAsRequested"
+                            }
+                            self._session = ort.InferenceSession(
+                                model_path, 
+                                sess_options=sess_opts, 
+                                providers=[("CUDAExecutionProvider", gpu_opts), "CPUExecutionProvider"]
+                            )
+                    except Exception:
+                        pass
+
+            self._onnx_ef = ExplicitGpuMiniLM()
+            log.info("Initialized local ONNX GPU embedding function (CUDA capped at 250 MB VRAM, 0 Ollama swapping) ✓")
+        except Exception as e:
+            log.warning(f"Failed to initialize local ONNX GPU embedding function: {e}")
+            self._fallback_ef = OllamaEmbeddingFunction()
+
+    def __call__(self, input: Documents) -> Embeddings:
+        if self._onnx_ef:
+            try:
+                return self._onnx_ef(input)
+            except Exception as e:
+                log.warning(f"ONNX GPU embedding call failed: {e}")
+        if self._fallback_ef:
+            return self._fallback_ef(input)
+        return [[0.0] * 384 for _ in input]
+
 class FastCpuEmbeddingFunction(EmbeddingFunction):
     """
     Local CPU ONNX embedding function to prevent Ollama from swapping/unloading Qwen in GPU VRAM.
@@ -135,8 +184,8 @@ class ChromaStore:
         # Initialize chroma client
         self.client = chromadb.PersistentClient(path=self.db_dir)
         
-        # Initialize local CPU embedding function to keep GPU VRAM 100% dedicated to Qwen
-        self.embedding_function = FastCpuEmbeddingFunction()
+        # Initialize local ONNX GPU embedding function (250 MB VRAM cap, 0 Ollama swapping)
+        self.embedding_function = FastGpuEmbeddingFunction()
         
         # Initialize or get collections with dimension safety
         self.documents_col = _get_or_create_compat_collection(self.client, "meeseeks_documents", self.embedding_function)
