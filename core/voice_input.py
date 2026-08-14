@@ -16,15 +16,30 @@ class VoiceInputManager:
         self.model = None
 
     def load_model(self):
-        """Lazy load the Whisper model on CPU with int8 quantization."""
+        """Lazy load the Whisper model on GPU (CUDA) with float16 precision and fallback."""
         if self.model is None:
-            log.info("Loading Whisper model (tiny.en, CPU, int8)...")
+            log.info("Loading Whisper model (base.en, CUDA, float16)...")
             try:
-                self.model = WhisperModel("tiny.en", device="cpu", compute_type="int8", local_files_only=True)
+                self.model = WhisperModel("base.en", device="cuda", compute_type="float16", local_files_only=True)
             except Exception:
-                log.info("Local Whisper model not found. Downloading from Hugging Face...")
-                self.model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+                log.info("Local Whisper base.en CUDA model not found or CUDA unavailable. Trying download/fallback...")
+                try:
+                    self.model = WhisperModel("base.en", device="cuda", compute_type="float16")
+                except Exception as e:
+                    log.warning(f"Failed to load base.en on CUDA ({e}). Falling back to CPU with int8...")
+                    self.model = WhisperModel("base.en", device="cpu", compute_type="int8")
             log.info("Whisper model loaded successfully ✓")
+
+    def _post_process_text(self, text: str) -> str:
+        """Apply spelling corrections for user's name (Kshayik)."""
+        if not text:
+            return text
+        import re
+        # Catch common phonetical mishearings: 'shik', 'shike', 'shyke', 'kshayeek', etc.
+        misspellings = [r"\bshik\b", r"\bshike\b", r"\bshyke\b", r"\bkshayeek\b", r"\bksayeek\b"]
+        for pattern in misspellings:
+            text = re.sub(pattern, "Kshayik", text, flags=re.IGNORECASE)
+        return text
 
     def record_and_transcribe(self) -> str:
         """
@@ -68,13 +83,14 @@ class VoiceInputManager:
 
         log.info("Transcribing recorded audio...")
         try:
-            segments, info = self.model.transcribe(audio, beam_size=1)
+            # We pass initial_prompt to bias recognition toward user's name "Kshayik"
+            segments, info = self.model.transcribe(audio, beam_size=1, initial_prompt="Kshayik")
             transcription = []
             for segment in segments:
                 transcription.append(segment.text)
             
             text = " ".join(transcription).strip()
-            return text
+            return self._post_process_text(text)
         except Exception as e:
             log.error(f"Transcription failed: {e}")
             print("\n[Meeseeks] Error: Transcription failed.")
@@ -125,11 +141,13 @@ class VoiceInputManager:
             loop = asyncio.get_running_loop()
             
             def do_transcribe():
-                segments, info = self.model.transcribe(audio, beam_size=1)
+                # Pass initial_prompt to bias recognition toward user's name "Kshayik"
+                segments, info = self.model.transcribe(audio, beam_size=1, initial_prompt="Kshayik")
                 transcription = []
                 for segment in segments:
                     transcription.append(segment.text)
-                return " ".join(transcription).strip()
+                text = " ".join(transcription).strip()
+                return self._post_process_text(text)
 
             text = await loop.run_in_executor(None, do_transcribe)
             return text

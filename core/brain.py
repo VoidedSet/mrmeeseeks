@@ -443,13 +443,6 @@ def normalize_tool_call(parsed: dict) -> dict:
                 args = {"key": str(val[0]), "data": str(val[1])}
             elif isinstance(val, str):
                 args = {"key": "user_data", "data": val}
-        elif tool_name in ("read_email", "open_email_gui"):
-            if isinstance(val, str):
-                args = {"query": val} if not val.isdigit() else {"uid": val}
-            elif isinstance(val, dict):
-                args = val
-        elif tool_name == "search_emails":
-            args = {"query": str(val)} if isinstance(val, str) else val
         else:
             args = {"query": str(val)} if isinstance(val, str) else (val if isinstance(val, dict) else {})
 

@@ -142,54 +142,38 @@ def _replace_iso_dates(match) -> str:
 def clean_text_for_tts(text: str) -> str:
     """
     Cleans text formatting, modifiers, dates, URLs, and pronunciations for speech synthesis.
-    - Strips internal [Observation ...] and JSON payload blocks
     - Converts 2026-08-09 -> "today", "yesterday", "5th August"
     - Strips markdown links [text](url) -> text
     - Strips HTTP/HTTPS URLs
     - Strips markdown headers, bold, italics, backticks
     - Replaces x/y with "x or y" or "x on y"
-    - Caps sentence length to 250 chars max for ONNX VRAM safety
     """
-    if not text:
-        return ""
-
-    # 1. Strip internal system blocks e.g. [Observation 2]: [Result from search_emails]: ...
-    text = re.sub(r"\[Observation \d+\]:.*?(?:(?:\{.*?\})|\n|$)", "", text, flags=re.DOTALL)
-    text = re.sub(r"\[Result from [^\]]+\]:.*?(?:(?:\{.*?\})|\n|$)", "", text, flags=re.DOTALL)
-
-    # 2. Strip raw JSON blobs if model leaked tool result in speech
-    text = re.sub(r'\{"result":.*?"\}', "", text, flags=re.DOTALL)
-
-    # 3. Convert ISO dates YYYY-MM-DD or YYYY/MM/DD to natural speech before slash removal
+    # 1. Convert ISO dates YYYY-MM-DD or YYYY/MM/DD to natural speech before slash removal
     text = re.sub(r"\b(\d{4})[-/](0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])\b", _replace_iso_dates, text)
 
-    # 4. Strip markdown links [link text](url) -> link text
+    # 2. Strip markdown links [link text](url) -> link text
     text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
 
-    # 5. Strip standalone URLs
+    # 3. Strip standalone URLs
     text = re.sub(r"https?://\S+", "", text)
 
-    # 6. Remove markdown headers (# Title)
+    # 4. Remove markdown headers (# Title)
     text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)
 
-    # 7. Remove markdown styling (**, *, __, _, `, etc.)
+    # 5. Remove markdown styling (**, *, __, _, `, etc.)
     text = re.sub(r"\*\*|__|\*|_|`", "", text)
 
-    # 8. Replace / between two numbers (with or without spaces) with "on"
+    # 6. Replace / between two numbers (with or without spaces) with "on"
     text = re.sub(r"(\d+)\s*/\s*(\d+)", r"\1 on \2", text)
 
-    # 9. Replace / between two words (with or without spaces) with "or"
+    # 7. Replace / between two words (with or without spaces) with "or"
     text = re.sub(r"([a-zA-Z]+)\s*/\s*([a-zA-Z]+)", r"\1 or \2", text)
 
-    # 10. Replace any remaining forward slashes or dashes between words with spaces
+    # 8. Replace any remaining forward slashes or dashes between words with spaces
     text = text.replace("/", " ")
 
-    # 11. Collapse multiple spaces and newlines
+    # 9. Collapse multiple spaces and newlines
     text = re.sub(r"\s+", " ", text).strip()
-
-    # 12. Cap single sentence length at 250 characters for ONNX VRAM safety
-    if len(text) > 250:
-        text = text[:247].rsplit(" ", 1)[0] + "..."
 
     return text
 

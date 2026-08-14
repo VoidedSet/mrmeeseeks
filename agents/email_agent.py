@@ -266,14 +266,14 @@ def get_email_agent() -> EmailAgent:
 
 # ─ IPC Bus handlers ──────────────────────────────────────────────────
 async def handle_fetch_inbox(args: dict) -> dict:
-    """Refresh inbox from Gmail (Chunked 2+3 fast pipeline)."""
+    """Refresh inbox from Gmail."""
     agent = get_email_agent()
     if not agent.gmail_address or "your@gmail.com" in agent.gmail_address:
         return {"error": "Gmail address is not configured. Please set GMAIL_ADDRESS in .env"}
     if not agent.app_password:
         return {"error": "Gmail app password is missing. Please set GMAIL_APP_PASSWORD in .env"}
 
-    max_emails = args.get("max", 15)
+    max_emails = args.get("max", 20)
     try:
         emails = await asyncio.wait_for(agent.fetch_inbox(max_emails=max_emails), timeout=10.0)
     except asyncio.TimeoutError:
@@ -287,32 +287,26 @@ async def handle_fetch_inbox(args: dict) -> dict:
         return {"total": 0, "non_promotional": 0, "promotional_filtered": 0, "emails": [], "status": "No emails returned"}
 
     real = [e for e in emails if not e["is_promotional"]]
-
-    # Fast 2-item chunk for instant speech response (<1.5s latency)
-    top_chunk = real[:2]
-    remaining_count = len(real) - len(top_chunk)
+    promo_count = len(emails) - len(real)
 
     clean_items = []
     summary_lines = []
-    for i, e in enumerate(top_chunk, 1):
+    for i, e in enumerate(real[:8], 1):
         s_name = _decode_header_value(e["sender_name"])
         subj = _decode_header_value(e["subject"])
         clean_items.append({"uid": e["uid"], "sender_name": s_name, "subject": subj, "date": e["date"]})
         summary_lines.append(f"{i}. From {s_name}: '{subj}'")
 
-    summary_text = f"Top {len(top_chunk)} recent emails:\n" + "\n".join(summary_lines)
-    if remaining_count > 0:
-        summary_text += f"\n({remaining_count} more emails available if requested)."
-
+    summary_text = f"Found {len(real)} recent emails:\n" + "\n".join(summary_lines)
     return {
         "summary_text": summary_text,
-        "instructions": f"Speak these top {len(top_chunk)} email summaries naturally to your King in 2 short sentences. Mention there are {remaining_count} more emails if he wants to hear them.",
+        "instructions": "Speak the summary naturally to the user in conversational sentences. Do NOT format as a Markdown table or list with 'Subject:' or 'Sender:' field labels.",
         "emails": clean_items
     }
 
 
 async def handle_get_email_summary(args: dict) -> dict:
-    """Get brief summaries of recent unread non-promotional emails (Chunked 2+3 fast pipeline)."""
+    """Get brief summaries of recent unread non-promotional emails."""
     agent = get_email_agent()
     if not agent.gmail_address or "your@gmail.com" in agent.gmail_address:
         return {"result": "Gmail address is not configured in .env"}
@@ -324,80 +318,32 @@ async def handle_get_email_summary(args: dict) -> dict:
     if not summary:
         return {"result": "No unread non-promotional emails found."}
 
-    top_chunk = summary[:2]
-    remaining = len(summary) - len(top_chunk)
-
     lines = []
-    for i, e in enumerate(top_chunk, 1):
+    for i, e in enumerate(summary, 1):
         s_name = _decode_header_value(e["sender_name"])
         subj = _decode_header_value(e["subject"])
         lines.append(f"{i}. From {s_name}: '{subj}'")
 
-    text = "Unread emails:\n" + "\n".join(lines)
-    if remaining > 0:
-        text += f"\n({remaining} more available)."
-
     return {
-        "result": text,
-        "instructions": f"Speak these top {len(top_chunk)} email titles naturally to your King. Tell him there are {remaining} more if he wants to hear them."
+        "result": "Unread emails:\n" + "\n".join(lines),
+        "instructions": "Speak the email titles naturally. Do NOT use markdown labels like Subject or Sender Name."
     }
 
 
 async def handle_read_email(args: dict) -> dict:
-    """Read full email content by UID or search query, and display on native GNOME preview card overlay."""
+    """Read full email content by UID."""
     uid = str(args.get("uid", "")).strip()
-    query = str(args.get("query", "")).strip() or str(args.get("sender", "")).strip() or str(args.get("subject", "")).strip()
-    
+    if not uid:
+        return {"error": "Missing 'uid' argument. Use get_email_summary first to get UIDs."}
     agent = get_email_agent()
-    em = None
-
-    # 1. Try direct UID lookup if valid numeric string
-    if uid and uid.isdigit():
-        em = await agent.get_email_body(uid)
-
-    # 2. Fall back to search query if UID is missing or a dummy string like "the_uid"
+    em = await agent.get_email_body(uid)
     if not em:
-        search_term = query or (uid if uid != "the_uid" else "")
-        if search_term:
-            results = await agent.search_by_sender(search_term)
-            if not results:
-                emails = await agent.fetch_inbox(max_emails=20, only_unread=False)
-                results = [
-                    e for e in emails 
-                    if search_term.lower() in e.get("sender_name", "").lower() 
-                    or search_term.lower() in e.get("subject", "").lower() 
-                    or search_term.lower() in e.get("sender", "").lower()
-                ]
-            if results:
-                em = results[0]
-        else:
-            # Fall back to the most recent email in inbox
-            emails = await agent.fetch_inbox(max_emails=5, only_unread=False)
-            if emails:
-                em = emails[0]
-
-    if not em:
-        return {"error": "Could not find a matching email to read."}
-
-    sender = _decode_header_value(em.get("sender_name") or em.get("sender", ""))
-    subject = _decode_header_value(em.get("subject", ""))
-    date = em.get("date", "")
-    body = em.get("body", "")
-
-    # 3. Trigger native GNOME overlay window on top-right of screen
-    try:
-        from core.ui.email_card import show_email_card
-        asyncio.create_task(asyncio.to_thread(show_email_card, sender, subject, date, body))
-    except Exception as e:
-        log.warning(f"Could not open EmailCardOverlay: {e}")
-
+        return {"error": f"Email with UID {uid} not found."}
     return {
-        "status": "displayed_on_screen",
-        "sender": sender,
-        "subject": subject,
-        "date": date,
-        "summary": body[:300],
-        "instructions": f"Tell your King in 1 natural sentence: 'I have displayed the email from {sender} regarding {subject} on your screen, my King.'"
+        "from": _decode_header_value(em["sender"]),
+        "subject": _decode_header_value(em["subject"]),
+        "date": em["date"],
+        "body": em["body"]
     }
 
 
@@ -428,16 +374,10 @@ async def handle_search_emails(args: dict) -> dict:
     }
 
 
-async def handle_open_email_gui(args: dict) -> dict:
-    """Open native GNOME preview card overlay for an email by UID, sender, or query."""
-    return await handle_read_email(args)
-
-
 def register():
     """Register email tools on the IPC bus."""
     bus.register("fetch_inbox", handle_fetch_inbox)
     bus.register("get_email_summary", handle_get_email_summary)
     bus.register("read_email", handle_read_email)
     bus.register("search_emails", handle_search_emails)
-    bus.register("open_email_gui", handle_open_email_gui)
     log.info("Email agent registered ✓")

@@ -150,7 +150,7 @@ def _synthesis_worker():
             from onnxruntime import InferenceSession
             gpu_opts = {
                 "device_id": 0,
-                "gpu_mem_limit": 1024 * 1024 * 1024,
+                "gpu_mem_limit": 1024 * 1024 * 512,
                 "cudnn_conv_algo_search": "HEURISTIC",
                 "arena_extend_strategy": "kSameAsRequested"
             }
